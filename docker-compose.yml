@@ -1,0 +1,10 @@
+version: "3"
+
+services:
+  hackathon-mysql:
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      # - MYSQL_DATABASE = hackathon
+    image: mysql:5.7.20
+    ports:
+      - "7400:3306"

@@ -1,6 +1,7 @@
 const express = require('express');
 const requireLogin = require('../middlewares/require-login');
 const validateOrg = require('../middlewares/validate-org');
+const dbObj = require('../utils/database-obj');
 
 const hackathonRouter = express.Router();
 
@@ -53,6 +54,15 @@ hackathonRouter.post(`${path["createHackathon"]}`, requireLogin, validateOrg, (r
             }
 
             if(validProbStatements && validSponsors){
+                dbObj.beginTransaction((err=>{
+                    if(err){
+                        return res.status(400).send({error: err});
+                    }
+
+                    let hackathonExists = ''
+
+                }))
+
                 return res.send({message: "Creating your hackathon...."})
             }
         }

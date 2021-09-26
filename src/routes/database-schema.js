@@ -8,15 +8,24 @@ paths = {
     createHackathonTable: '/api/hackathon/createHackathonTable',
     createProblemStatementTable: '/api/hackathon/createProblemStatementTable',
     createSubmissionTable: '/api/hackathon/createSubmissionTable',
-    createSponsorTable: '/api/hackathon/createSponsorTable'
+    createSponsorTable: '/api/hackathon/createSponsorTable',
+    dropHackathonTable: '/api/hackathon/dropHackathonTable',
+    dropProblemStatementTable: '/api/hackathon/dropProblemStatementTable',
+    dropSponsorTable: '/api/hackathon/dropSponsorTable',
+    dropSubmissionTable: '/api/hackathon/dropSubmissionTable'
 }
 
 queries = {
     createdb: "CREATE DATABASE hackathon",
-    createHackathonTable: "CREATE TABLE IF NOT EXISTS hackathon(id VARCHAR(30) NOT NULL, title VARCHAR(100) NOT NULL, description VARCHAR(120) NOT NULL, regStart DATE NOT NULL, regEnd DATE NOT NULL, hackStart DATE NOT NULL, hackEnd DATE NOT NULL, facebook VARCHAR(100) DEFAULT '', instagram VARCHAR(100) DEFAULT '', twitter VARCHAR(100) DEFAULT '', linkedin VARCHAR(100) DEFAULT '', maxParticipants INT NOT NULL, participantCount INT DEFAULT 0, PRIMARY KEY(id))",
+    createHackathonTable: "CREATE TABLE IF NOT EXISTS hackathon(id VARCHAR(30) NOT NULL, title VARCHAR(100) NOT NULL, description VARCHAR(120) NOT NULL, organizedBy VARCHAR(50), regStart DATE NOT NULL, regEnd DATE NOT NULL, hackStart DATE NOT NULL, hackEnd DATE NOT NULL, facebook VARCHAR(100) DEFAULT '', instagram VARCHAR(100) DEFAULT '', twitter VARCHAR(100) DEFAULT '', linkedin VARCHAR(100) DEFAULT '', maxParticipants INT NOT NULL, participantCount INT DEFAULT 0, PRIMARY KEY(id))",
     createProblemStatementTable: "CREATE TABLE IF NOT EXISTS problemStatement(id VARCHAR(30) NOT NULL, hackathonID VARCHAR(30) NOT NULL, title VARCHAR(100) NOT NULL, description VARCHAR(120) NOT NULL, technologies VARCHAR(120) NOT NULL, submissionFormat VARCHAR(30) NOT NULL, guidlines VARCHAR(120) NOT NULL, refMaterial VARCHAR(100) NOT NULL, PRIMARY KEY(id), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON DELETE CASCADE ON UPDATE CASCADE)",
     createSubmissionTable: "CREATE TABLE IF NOT EXISTS submission(id VARCHAR(30) NOT NULL, userEmail VARCHAR(50) NOT NULL, hackathonID VARCHAR(30) NOT NULL, problemStatID VARCHAR(30) NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, submissionLink VARCHAR(100) NOT NULL, PRIMARY KEY(id), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON UPDATE CASCADE ON DELETE CASCADE, FOREIGN KEY(problemStatID) REFERENCES problemStatement(id) ON UPDATE CASCADE ON DELETE CASCADE)",
-    createSponsorTable: "CREATE TABLE IF NOT EXISTS sponsor(id VARCHAR(30) NOT NULL, hackathonID VARCHAR(30) NOT NULL, name VARCHAR(30) NOT NULL, imageLink VARCHAR(100) NOT NULL, webLink VARCHAR(100) NOT NULL, PRIMARY KEY(id), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON DELETE CASCADE ON UPDATE CASCADE)"
+    createSponsorTable: "CREATE TABLE IF NOT EXISTS sponsor(id VARCHAR(30) NOT NULL, hackathonID VARCHAR(30) NOT NULL, name VARCHAR(30) NOT NULL, imageLink VARCHAR(100) NOT NULL, webLink VARCHAR(100) NOT NULL, PRIMARY KEY(id), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON DELETE CASCADE ON UPDATE CASCADE)",
+    dropHackathonTable: "DROP TABLE hackathon",
+    dropProblemStatementTable: "DROP TABLE problemStatement",
+    dropSponsorTable: "DROP TABLE submission",
+    dropSubmissionTable: "DROP TABLE sponsor"
+
 }
 
 // @Query - CREATE HACKATHON DATABASE
@@ -81,6 +90,58 @@ schemaRouter.get(paths['createSubmissionTable'], (req, res)=>{
 
         console.log('Submission Table created successfully');
         return res.send({message: 'Submission Table created successfully'});
+    });
+});
+
+// @Query - DROP HACKATHON TABLE
+schemaRouter.get(paths['dropHackathonTable'], (req, res)=>{
+    dbObj.query(queries['dropHackathonTable'], (err, result)=>{
+        if(err){
+            console.log("Error dropping hackathon table", err);
+            throw new Error('Error dropping hackathon table');
+        }
+
+        console.log('Hackathon Table dropped successfully');
+        return res.send({message: 'Hackathon Table dropped successfully'});
+    });
+});
+
+// @QUery - DROP PROBLEM STATEMENT TABLE
+schemaRouter.get(paths['dropProblemStatementTable'], (req, res)=>{
+    dbObj.query(queries['dropProblemStatementTable'], (err, result)=>{
+        if(err){
+            console.log("Error dropping problem statement table", err);
+            throw new Error('Error dropping problem statement table');
+        }
+
+        console.log('Problem Statement Table dropped successfully');
+        return res.send({message: 'Problem Statement Table dropped successfully'});
+    });
+});
+
+// @QUery - DROP SPONSORS TABLE
+schemaRouter.get(paths['dropSponsorTable'], (req, res)=>{
+    dbObj.query(queries['dropSponsorTable'], (err, result)=>{
+        if(err){
+            console.log("Error dropping sponsor table", err);
+            throw new Error('Error dropping sponsor table');
+        }
+
+        console.log('Sponsor Table dropped successfully');
+        return res.send({message: 'Sponsor Table dropped successfully'});
+    });
+});
+
+// @QUery - DROP SUBMISSION TABLE
+schemaRouter.get(paths['dropSubmissionTable'], (req, res)=>{
+    dbObj.query(queries['dropSubmissionTable'], (err, result)=>{
+        if(err){
+            console.log("Error dropping submission table", err);
+            throw new Error('Error dropping submission table');
+        }
+
+        console.log('Submission Table dropped successfully');
+        return res.send({message: 'Submission Table dropped successfully'});
     });
 });
 

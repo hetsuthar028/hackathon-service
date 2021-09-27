@@ -7,6 +7,7 @@ paths = {
     createdb: '/api/hackathon/createdb',
     createHackathonTable: '/api/hackathon/createHackathonTable',
     createProblemStatementTable: '/api/hackathon/createProblemStatementTable',
+    createRegistrationTable: '/api/hackathon/createRegistrationTable',
     createSubmissionTable: '/api/hackathon/createSubmissionTable',
     createSponsorTable: '/api/hackathon/createSponsorTable',
     dropHackathonTable: '/api/hackathon/dropHackathonTable',
@@ -17,14 +18,15 @@ paths = {
 
 queries = {
     createdb: "CREATE DATABASE hackathon",
-    createHackathonTable: "CREATE TABLE IF NOT EXISTS hackathon(id VARCHAR(30) NOT NULL, title VARCHAR(100) NOT NULL, description VARCHAR(120) NOT NULL, organizedBy VARCHAR(50), regStart DATE NOT NULL, regEnd DATE NOT NULL, hackStart DATE NOT NULL, hackEnd DATE NOT NULL, facebook VARCHAR(100) DEFAULT '', instagram VARCHAR(100) DEFAULT '', twitter VARCHAR(100) DEFAULT '', linkedin VARCHAR(100) DEFAULT '', maxParticipants INT NOT NULL, participantCount INT DEFAULT 0, PRIMARY KEY(id))",
-    createProblemStatementTable: "CREATE TABLE IF NOT EXISTS problemStatement(id VARCHAR(30) NOT NULL, hackathonID VARCHAR(30) NOT NULL, title VARCHAR(100) NOT NULL, description VARCHAR(120) NOT NULL, technologies VARCHAR(120) NOT NULL, submissionFormat VARCHAR(30) NOT NULL, guidlines VARCHAR(120) NOT NULL, refMaterial VARCHAR(100) NOT NULL, PRIMARY KEY(id), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON DELETE CASCADE ON UPDATE CASCADE)",
-    createSubmissionTable: "CREATE TABLE IF NOT EXISTS submission(id VARCHAR(30) NOT NULL, userEmail VARCHAR(50) NOT NULL, hackathonID VARCHAR(30) NOT NULL, problemStatID VARCHAR(30) NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, submissionLink VARCHAR(100) NOT NULL, PRIMARY KEY(id), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON UPDATE CASCADE ON DELETE CASCADE, FOREIGN KEY(problemStatID) REFERENCES problemStatement(id) ON UPDATE CASCADE ON DELETE CASCADE)",
-    createSponsorTable: "CREATE TABLE IF NOT EXISTS sponsor(id VARCHAR(30) NOT NULL, hackathonID VARCHAR(30) NOT NULL, name VARCHAR(30) NOT NULL, imageLink VARCHAR(100) NOT NULL, webLink VARCHAR(100) NOT NULL, PRIMARY KEY(id), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON DELETE CASCADE ON UPDATE CASCADE)",
+    createHackathonTable: "CREATE TABLE IF NOT EXISTS hackathon(id VARCHAR(50) NOT NULL, title VARCHAR(100) NOT NULL, description VARCHAR(120) NOT NULL, organizedBy VARCHAR(50) NOT NULL, regStart DATE NOT NULL, regEnd DATE NOT NULL, hackStart DATE NOT NULL, hackEnd DATE NOT NULL, facebook VARCHAR(100) DEFAULT '', instagram VARCHAR(100) DEFAULT '', twitter VARCHAR(100) DEFAULT '', linkedin VARCHAR(100) DEFAULT '', maxParticipants INT NOT NULL, participantCount INT DEFAULT 0, PRIMARY KEY(id))",
+    createProblemStatementTable: "CREATE TABLE IF NOT EXISTS problemStatement(id VARCHAR(50) NOT NULL, hackathonID VARCHAR(50) NOT NULL, title VARCHAR(100) NOT NULL, description VARCHAR(120) NOT NULL, technologies VARCHAR(120) NOT NULL, submissionFormat VARCHAR(30) NOT NULL, guidelines VARCHAR(120) NOT NULL, refMaterial VARCHAR(100) NOT NULL, PRIMARY KEY(id), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON DELETE CASCADE ON UPDATE CASCADE)",
+    createSubmissionTable: "CREATE TABLE IF NOT EXISTS submission(id VARCHAR(50) NOT NULL, userEmail VARCHAR(50) NOT NULL, hackathonID VARCHAR(50) NOT NULL, problemStatID VARCHAR(50) NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, submissionLink VARCHAR(100) NOT NULL, PRIMARY KEY(id), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON UPDATE CASCADE ON DELETE CASCADE, FOREIGN KEY(problemStatID) REFERENCES problemStatement(id) ON UPDATE CASCADE ON DELETE CASCADE)",
+    createSponsorTable: "CREATE TABLE IF NOT EXISTS sponsor(id VARCHAR(50) NOT NULL, hackathonID VARCHAR(50) NOT NULL, name VARCHAR(50) NOT NULL, imageLink VARCHAR(100) NOT NULL, webLink VARCHAR(100) NOT NULL, PRIMARY KEY(id), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON DELETE CASCADE ON UPDATE CASCADE)",
+    createRegistrationTable: "CREATE TABLE IF NOT EXISTS registration(id VARCHAR(50) NOT NULL, userEmail VARCHAR(50) NOT NULL, hackathonID VARCHAR(50) NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(hackathonID, userEmail), FOREIGN KEY(hackathonID) REFERENCES hackathon(ID) ON DELETE CASCADE)",
     dropHackathonTable: "DROP TABLE hackathon",
     dropProblemStatementTable: "DROP TABLE problemStatement",
     dropSponsorTable: "DROP TABLE submission",
-    dropSubmissionTable: "DROP TABLE sponsor"
+    dropSubmissionTable: "DROP TABLE sponsor",
 
 }
 
@@ -90,6 +92,19 @@ schemaRouter.get(paths['createSubmissionTable'], (req, res)=>{
 
         console.log('Submission Table created successfully');
         return res.send({message: 'Submission Table created successfully'});
+    });
+});
+
+// @Query - CREATE REGISTRATION DATABASE
+schemaRouter.get(paths['createRegistrationTable'], (req, res)=>{
+    dbObj.query(queries['createRegistrationTable'], (err, result)=>{
+        if(err){
+            console.log("Error creating Registration Table");
+            throw new Error('Error creating Registration Table');
+        }
+
+        console.log('Registration Table created successfully');
+        return res.send({message: 'Registration Table created successfully'});
     });
 });
 

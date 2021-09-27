@@ -13,7 +13,7 @@ const requireLogin = async (req, res, next) =>{
                 }
             }).then(response=>{
                 // console.log("Login", response.data)
-                req.currentUser = response.data;
+                req.currentUser = response.data.currentUser;
                 // console.log("C User", req.currentUser)
                 next();
             }).catch(err=>{

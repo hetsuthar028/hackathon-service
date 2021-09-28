@@ -1,36 +1,16 @@
-const express = require("express");
-const requireLogin = require("../middlewares/require-login");
-const validateOrg = require("../middlewares/validate-org");
-const dbObj = require("../utils/database-obj");
+const express = require('express');
+const dbObj = require('../utils/database-obj');
+const requireLogin = require('../middlewares/require-login');
+const validateOrg = require('../middlewares/validate-org');
 const { v4: uuid4 } = require("uuid");
 
-const hackathonRouter = express.Router();
+const hackathonCreateRouter = express.Router();
 
-let path = {
-    getUpcomingHackathons: "/api/hackathon/getUpcomingHackathons",
-    getAllHackathons: "",
-    createHackathon: "/api/hackathon/createHackathon",
-    getSpecificHackathon: "/api/hackathon/getHackathon/:hackathonID",
-    registerForHackathon: "/api/hackathon/register/:hackathonID"
-};
+const path = {
+    createHackathon: "/api/hackathon/create"
+}
 
-hackathonRouter.get(
-    `${path["getUpcomingHackathons"]}`,
-    requireLogin,
-    (req, res) => {
-        // console.log("Req Header", req.headers.authorization);
-        // console.log("Current User", req.currentUser);
-        if (req.currentUser) {
-            return res.send({ message: "Here's are your hackathons." });
-        } else {
-            return res
-                .status(401)
-                .json({ message: "You're not authorized user." });
-        }
-    }
-);
-
-hackathonRouter.post(
+hackathonCreateRouter.post(
     `${path["createHackathon"]}`,
     requireLogin,
     validateOrg,
@@ -49,6 +29,9 @@ hackathonRouter.post(
                 twitter,
                 linkedIn,
                 maxParticipants,
+                firstPrizeDesc,
+                secondPrizeDesc,
+                thirdPrizeDesc,
                 problemStatements,
                 sponsors,
             } = req.body;
@@ -62,6 +45,9 @@ hackathonRouter.post(
                 hackStart &&
                 hackEnd &&
                 maxParticipants &&
+                firstPrizeDesc &&
+                secondPrizeDesc &&
+                thirdPrizeDesc &&
                 problemStatements.length != 0
             ) {
                 let validProbStatements = 1;
@@ -143,8 +129,8 @@ hackathonRouter.post(
 
                             // Add a Hackathon into Table
                             let uniqueHackathonID = uuid4();
-                            let addHackathonQuery = `INSERT INTO hackathon(id, title, description, organizedBy, regStart, regEnd, hackStart, hackEnd, facebook, instagram, twitter, linkedin, maxParticipants) 
-                                                VALUES('${uniqueHackathonID}', '${title}', '${description}', '${organizedBy}', STR_TO_DATE("${regStart}","%d-%m-%Y"), STR_TO_DATE("${regEnd}","%d-%m-%Y"), STR_TO_DATE("${hackStart}","%d-%m-%Y"), STR_TO_DATE("${hackEnd}","%d-%m-%Y"), '${facebook}', '${instagram}', '${twitter}', '${linkedIn}', ${maxParticipants})`;
+                            let addHackathonQuery = `INSERT INTO hackathon(id, title, description, organizedBy, regStart, regEnd, hackStart, hackEnd, facebook, instagram, twitter, linkedin, maxParticipants, firstPrizeDesc, secondPrizeDesc, thirdPrizeDesc) 
+                                                VALUES('${uniqueHackathonID}', '${title}', '${description}', '${organizedBy}', STR_TO_DATE("${regStart}","%d-%m-%Y"), STR_TO_DATE("${regEnd}","%d-%m-%Y"), STR_TO_DATE("${hackStart}","%d-%m-%Y"), STR_TO_DATE("${hackEnd}","%d-%m-%Y"), '${facebook}', '${instagram}', '${twitter}', '${linkedIn}', ${maxParticipants}, '${firstPrizeDesc}', '${secondPrizeDesc}', '${thirdPrizeDesc}')`;
 
                             dbObj.query(addHackathonQuery, (err, results) => {
                                 if (err) {
@@ -250,58 +236,4 @@ hackathonRouter.post(
     }
 );
 
-hackathonRouter.get(`${path["getSpecificHackathon"]}`, requireLogin, (req, res)=>{
-    if(req.currentUser){
-        console.log(req.params.hackathonID)
-        let hackathonExistsQuery = `SELECT * FROM hackathon WHERE id='${req.params.hackathonID}'`;
-        dbObj.query(hackathonExistsQuery, (err, results)=>{
-            if(err){
-                console.log("Can't fetch Hackathon")
-                // return res.status(400).json({error: "Can't fetch Hackathon"})
-            }
-            if(results && results[0].length == 0){
-                console.log("Hackathon doesn't exists")
-                // return res.status(400).json({error: "Hackathon doesn't exists"})
-            } else{
-                if(results[0]){
-                    console.log("Got it", results[0])
-                    // return res.send({hackathonData: results[0]});
-                }
-            }
-        })
-
-        console.log("Hackathon Requested -", req.params.hackathonID);
-        // return res.send(req.params.hackathonID);
-    } else{
-        console.log("Not Authorized")
-        return res.status(401).json({message: "Not authorized user"})
-    }
-});
-
-hackathonRouter.post(`${path["registerForHackathon"]}`, requireLogin, (req, res)=>{
-    if(req.currentUser){
-        let hackathonID = req.params.hackathonID;
-        if(hackathonID){
-            let hackathonExistsQuery = `SELECT id FROM hackathon WHERE id='${hackathonID}'`
-            dbObj.query(hackathonExistsQuery, (err, results)=>{
-                if(err){
-                    return console.log("Error getting Hackathon");
-                }
-                if(results && results[0].length !=0){
-                    let uniqueRegID = uuid4();
-                    let registrationQuery = `INSERT INTO registration(id, userEmail, hackathonID) VALUES('${uniqueRegID}', '${req.currentUser.email}', '${hackathonID}')`;
-                    dbObj.query(registrationQuery, (err, results)=>{
-                        if(err){
-                            return console.log("You're already registered for a Hackathon");
-                        }
-                        return console.log("You're registered for the hackathon");
-                    })
-                }
-            })
-        }
-    } else{
-        return res.status(401).json({message: "Not Authorized"});
-    }
-})
-
-module.exports = hackathonRouter;
+module.exports = hackathonCreateRouter;

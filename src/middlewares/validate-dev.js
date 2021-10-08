@@ -1,7 +1,7 @@
 const validateDev = (req, res, next) =>{
-    if(req.currentUser && req.currentUsere != undefined){
+    if(req.currentUser && req.currentUser != undefined){
         let currentUser = req.currentUser;
-
+        // console.log("Client Header", currentUser)
         if(currentUser.userType == 'developer'){
             req.validDev = true;
             next();

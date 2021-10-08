@@ -9,7 +9,8 @@ let path = {
     getUpcomingHackathons: "/api/hackathon/get/upcomingHackathons",
     getAllHackathons: "/api/hackathon/get/allHackathons",
     getSpecificHackathon: "/api/hackathon/get/id/:hackathonID",
-    getPastHackathon: "/api/hackathon/get/pastHackathons"
+    getPastHackathon: "/api/hackathon/get/pastHackathons",
+    getHackathonSummary: "/api/hackathon/get/hackathonSummary/:hackathonID"
 }
 
 hackathonGetRouter.get(

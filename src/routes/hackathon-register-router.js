@@ -1,6 +1,6 @@
 const express = require("express");
 const requireLogin = require("../middlewares/require-login");
-const validateDev = require("../middlewares/validate-dev");
+const validateDev = require('../middlewares/validate-dev');
 const dbObj = require("../utils/database-obj");
 const { v4: uuid4 } = require("uuid");
 
@@ -12,7 +12,9 @@ let path = {
 
 // @POST Route - Register for a Hackathon
 hackathonRegisterRouter.post(`${path["registerForHackathon"]}`, requireLogin, validateDev, (req, res)=>{
-    if(req.currentUser && req.validateDev == true){
+    // console.log("C User", req.currentUser)
+    // console.log("Valid Dev", req.validDev)
+    if(req.currentUser && req.validDev == true){
         let hackathonID = req.params.hackathonID;
         if(hackathonID){
             let hackathonExistsQuery = `SELECT id FROM hackathon WHERE id='${hackathonID}'`
@@ -20,13 +22,24 @@ hackathonRegisterRouter.post(`${path["registerForHackathon"]}`, requireLogin, va
                 if(err){
                     return console.log("Error getting Hackathon");
                 }
-                if(results && results[0].length !=0){
+                console.log("Results", results)
+                if(results && results.length !=0){                
                     let uniqueRegID = uuid4();
                     let registrationQuery = `INSERT INTO registration(id, userEmail, hackathonID) VALUES('${uniqueRegID}', '${req.currentUser.email}', '${hackathonID}')`;
                     dbObj.query(registrationQuery, (err, results)=>{
                         if(err){
                             return console.log("You're already registered for a Hackathon");
                         }
+                        
+                        // @Query - Participant Count Update
+                        let updateParticipantQuery = `UPDATE hackathon SET participantCount = participantCount + 1 WHERE id='${hackathonID}'`;
+                        dbObj.query(updateParticipantQuery, (err, result)=>{
+                            if(err){
+                                return console.log("Error updating Participant Count");
+                            }
+                            return console.log("Participant Count updated")
+                        })                        
+
                         return console.log("You're registered for the hackathon");
                     })
                 }

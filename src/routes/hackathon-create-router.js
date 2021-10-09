@@ -224,7 +224,7 @@ hackathonCreateRouter.post(
                         let uniqueHackathonID =
                             result.add_hackathon_db.uniqueHackathonID;
 
-                        console.log("Add Hackathon result", result);
+                        console.log("Add Hackathon result =", result);
                         let {
                             title,
                             description,
@@ -272,7 +272,7 @@ hackathonCreateRouter.post(
                 add_problem_statements_db: [
                     "add_sponsors_db",
                     function (result, callback) {
-                        console.log("Sponsors Data", result);
+                        console.log("Sponsors Data =", result);
                         let uniqueHackathonID =
                             result.add_hackathon_db.uniqueHackathonID;
 
@@ -325,15 +325,15 @@ hackathonCreateRouter.post(
                         });
                         callback(null, 'Problem statements added')
                     },
-                ],
+                ]
             })
             .then((results) => {
                 console.log("Results =", results);
-                return res.json(results)
+                // return res.json(results)
             })
             .catch((err) => {
                 console.log("Error =", err);
-                return res.status(500).send(err);
+                // return res.status(500).send(err);
             });
     }
 );

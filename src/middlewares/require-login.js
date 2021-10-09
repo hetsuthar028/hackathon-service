@@ -17,13 +17,13 @@ const requireLogin = async (req, res, next) =>{
                 // console.log("C User", req.currentUser)
                 next();
             }).catch(err=>{
-                return next();
+                next();
                 // return res.status(400).send({message: "User not validated"})
             })
         }
     }
 
-    return next();
+    next();
     // return res.status(400).send({message: "User not validated"})
 
 

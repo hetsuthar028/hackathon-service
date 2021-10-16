@@ -101,7 +101,12 @@ hackathonGetRouter.get(
 // );
 
 // Get Specific Hackathon - Async
-hackathonGetRouter.get(`${path['getSpecificHackathon']}`, requireLogin, (req, res)=>{
+hackathonGetRouter.get(`${path['getSpecificHackathon']}`, (req, res)=>{
+    
+    // Temp Current User [Because we've removed "requireLogin" middleware from above request]
+    req.currentUser = {
+        email : "hetmewada0028@gmail.com"
+    }
     async.auto({
         check_current_user : function(callback){
             if(!req.currentUser){
@@ -155,6 +160,7 @@ hackathonGetRouter.get(`${path['getSpecificHackathon']}`, requireLogin, (req, re
         ]
     }).then(responses => {
         console.log("Sent")
+        console.log(responses)
         return res.json(responses);
     }).catch(err=>{
         console.log("Recv", err)

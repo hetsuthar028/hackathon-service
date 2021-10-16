@@ -28,101 +28,115 @@ hackathonCreateRouter.post(
                 validate_inputs: [
                     "validate_org",
                     function (result, callback) {
-                        let {
-                            title,
-                            description,
-                            organizedBy,
-                            regStart,
-                            regEnd,
-                            hackStart,
-                            hackEnd,
-                            facebook,
-                            instagram,
-                            twitter,
-                            linkedIn,
-                            maxParticipants,
-                            firstPrizeDesc,
-                            secondPrizeDesc,
-                            thirdPrizeDesc,
-                            problemStatements,
-                            sponsors,
-                        } = req.body;
-
-                        if (
-                            title &&
-                            description &&
-                            organizedBy &&
-                            regStart &&
-                            regEnd &&
-                            hackStart &&
-                            hackEnd &&
-                            maxParticipants &&
-                            firstPrizeDesc &&
-                            secondPrizeDesc &&
-                            thirdPrizeDesc &&
-                            problemStatements.length != 0
-                        ) {
-                            let validProbStatements = 1;
-                            let validSponsors = 1;
-
-                            if (!facebook) {
-                                facebook = "";
-                            }
-
-                            if (!instagram) {
-                                instagram = "";
-                            }
-
-                            if (!twitter) {
-                                twitter = "";
-                            }
-
-                            if (!linkedIn) {
-                                linkedIn = "";
-                            }
-
-                            problemStatements.forEach((problemStatement) => {
-                                let {
-                                    probTitle,
-                                    probDescription,
-                                    probTechnologies,
-                                    probSubmissionFormat,
-                                    probGuidelines,
-                                    probReference,
-                                } = problemStatement;
-                                if (
-                                    probTitle &&
-                                    probDescription &&
-                                    probTechnologies &&
-                                    probSubmissionFormat &&
-                                    probGuidelines &&
-                                    probReference
-                                ) {
-                                    //
-                                } else {
-                                    validProbStatements = 0;
+                        try{
+                            let {
+                                title,
+                                description,
+                                organizedBy,
+                                regStart,
+                                regEnd,
+                                hackStart,
+                                hackEnd,
+                                maxParticipants,
+                                submissionFormats, 
+                                submissionGuidelines,
+                                facebook,
+                                instagram,
+                                twitter,
+                                linkedIn,
+                                firstPrizeDesc,
+                                secondPrizeDesc,
+                                thirdPrizeDesc,
+                                problemStatements,
+                                sponsors,
+                            } = req.body;
+    
+                            if (
+                                title &&
+                                description &&
+                                organizedBy &&
+                                regStart &&
+                                regEnd &&
+                                hackStart &&
+                                hackEnd &&
+                                maxParticipants &&
+                                firstPrizeDesc &&
+                                secondPrizeDesc &&
+                                thirdPrizeDesc &&
+                                submissionFormats &&
+                                submissionGuidelines &&
+                                problemStatements.length != 0
+                            ) {
+                                let validProbStatements = 1;
+                                let validSponsors = 1;
+    
+                                if (!facebook) {
+                                    facebook = "";
                                 }
-                            });
-
-                            if (sponsors.length != 0) {
-                                sponsors.forEach((sponsor) => {
-                                    let { name, imageLink, webLink } = sponsor;
-
-                                    if (name && imageLink && webLink) {
-                                        // Valid
+    
+                                if (!instagram) {
+                                    instagram = "";
+                                }
+    
+                                if (!twitter) {
+                                    twitter = "";
+                                }
+    
+                                if (!linkedIn) {
+                                    linkedIn = "";
+                                }
+    
+                                problemStatements.forEach((problemStatement) => {
+                                    let {
+                                        probTitle,
+                                        probDescription,
+                                        probTechnologies,
+                                        probReference,
+                                    } = problemStatement;
+                                    if (
+                                        probTitle &&
+                                        probDescription &&
+                                        probTechnologies &&
+                                        probReference
+                                    ) {
+                                        //
                                     } else {
-                                        validSponsors = 0;
+                                        validProbStatements = 0;
+                                        callback("Invalid Inputs", null);
+                                        return;
                                     }
                                 });
-                            }
-
-                            if (validProbStatements && validSponsors) {
-                                callback(null, "valid");
+    
+                                if (sponsors.length != 0) {
+                                    sponsors.forEach((sponsor) => {
+                                        let { name, imageLink, webLink } = sponsor;
+    
+                                        if (name && imageLink && webLink) {
+                                            // Valid
+                                        } else {
+                                            validSponsors = 0;
+                                            callback("Invalid Inputs", null);
+                                            return;
+                                        }
+                                    });
+                                }
+    
+                                if (validProbStatements && validSponsors) {
+                                    return callback(null, "valid");
+                                } else {
+                                    callback("Invalid Inputs", null);
+                                    return;
+                                }
                             } else {
                                 callback("Invalid Inputs", null);
                                 return;
                             }
                         }
+                        catch(err) {
+                            callback("Invalid Inputs", null);
+                                return;
+                        }
+                        
                     },
                 ],
 
@@ -132,28 +146,13 @@ hackathonCreateRouter.post(
                     function (result, callback) {
                         let {
                             title,
-                            description,
-                            organizedBy,
-                            regStart,
-                            regEnd,
-                            hackStart,
-                            hackEnd,
-                            facebook,
-                            instagram,
-                            twitter,
-                            linkedIn,
-                            maxParticipants,
-                            firstPrizeDesc,
-                            secondPrizeDesc,
-                            thirdPrizeDesc,
-                            problemStatements,
-                            sponsors,
                         } = req.body;
-
+                        console.log("Validation = ", result)
                         let hackathonExists = `SELECT title, organizedBy FROM hackathon where title='${title}'`;
-
+                        
                         dbObj.query(hackathonExists, (err, results) => {
-                            if (err) {
+                            
+                            if (err) {  
                                 callback(
                                     "Error fetching the hackathon from database",
                                     null
@@ -173,6 +172,7 @@ hackathonCreateRouter.post(
                 add_hackathon_db: [
                     "check_existing_hackathon",
                     function (result, callback) {
+                        console.log("Existing = ", result)
                         let {
                             title,
                             description,
@@ -181,26 +181,27 @@ hackathonCreateRouter.post(
                             regEnd,
                             hackStart,
                             hackEnd,
+                            maxParticipants,
+                            submissionFormats, 
+                            submissionGuidelines,
                             facebook,
                             instagram,
                             twitter,
                             linkedIn,
-                            maxParticipants,
                             firstPrizeDesc,
                             secondPrizeDesc,
                             thirdPrizeDesc,
-                            problemStatements,
-                            sponsors,
                         } = req.body;
 
                         let uniqueHackathonID = uuid4();
-                        let addHackathonQuery = `INSERT INTO hackathon(id, title, description, organizedBy, regStart, regEnd, hackStart, hackEnd, facebook, instagram, twitter, linkedin, maxParticipants, firstPrizeDesc, secondPrizeDesc, thirdPrizeDesc) 
-                                                VALUES('${uniqueHackathonID}', '${title}', '${description}', '${organizedBy}', STR_TO_DATE("${regStart}","%d-%m-%Y"), STR_TO_DATE("${regEnd}","%d-%m-%Y"), STR_TO_DATE("${hackStart}","%d-%m-%Y"), STR_TO_DATE("${hackEnd}","%d-%m-%Y"), '${facebook}', '${instagram}', '${twitter}', '${linkedIn}', ${maxParticipants}, '${firstPrizeDesc}', '${secondPrizeDesc}', '${thirdPrizeDesc}')`;
+                        let addHackathonQuery = `INSERT INTO hackathon(id, title, description, organizedBy, regStart, regEnd, hackStart, hackEnd, maxParticipants, submissionFormats, submissionGuidelines, facebook, instagram, twitter, linkedin, firstPrizeDesc, secondPrizeDesc, thirdPrizeDesc) 
+                                                VALUES('${uniqueHackathonID}', '${title}', '${description}', '${organizedBy}', STR_TO_DATE("${regStart}","%d-%m-%Y"), STR_TO_DATE("${regEnd}","%d-%m-%Y"), STR_TO_DATE("${hackStart}","%d-%m-%Y"), STR_TO_DATE("${hackEnd}","%d-%m-%Y"), ${maxParticipants}, '${submissionFormats}', '${submissionGuidelines}', '${facebook}', '${instagram}', '${twitter}', '${linkedIn}', '${firstPrizeDesc}', '${secondPrizeDesc}', '${thirdPrizeDesc}')`;
 
                         dbObj.query(addHackathonQuery, (err, results) => {
                             if (err) {
+                                console.log("ERR = ", err)
                                 callback(
-                                    "Error fetching the hackathon from database",
+                                    "Error adding the hackathon to table",
                                     null
                                 );
                                 dbObj.rollback();
@@ -226,22 +227,6 @@ hackathonCreateRouter.post(
 
                         console.log("Add Hackathon result =", result);
                         let {
-                            title,
-                            description,
-                            organizedBy,
-                            regStart,
-                            regEnd,
-                            hackStart,
-                            hackEnd,
-                            facebook,
-                            instagram,
-                            twitter,
-                            linkedIn,
-                            maxParticipants,
-                            firstPrizeDesc,
-                            secondPrizeDesc,
-                            thirdPrizeDesc,
-                            problemStatements,
                             sponsors,
                         } = req.body;
 
@@ -277,23 +262,7 @@ hackathonCreateRouter.post(
                             result.add_hackathon_db.uniqueHackathonID;
 
                         let {
-                            title,
-                            description,
-                            organizedBy,
-                            regStart,
-                            regEnd,
-                            hackStart,
-                            hackEnd,
-                            facebook,
-                            instagram,
-                            twitter,
-                            linkedIn,
-                            maxParticipants,
-                            firstPrizeDesc,
-                            secondPrizeDesc,
-                            thirdPrizeDesc,
                             problemStatements,
-                            sponsors,
                         } = req.body;
 
                         problemStatements.forEach((problemStatement) => {
@@ -302,12 +271,10 @@ hackathonCreateRouter.post(
                                 probTitle,
                                 probDescription,
                                 probTechnologies,
-                                probSubmissionFormat,
-                                probGuidelines,
                                 probReference,
                             } = problemStatement;
-                            let addProblemStatementQuery = `INSERT INTO problemStatement(id, hackathonID, title, description, technologies, submissionFormat, guidelines, refMaterial)
-                                                        VALUES('${problemStatementID}', '${uniqueHackathonID}', '${probTitle}', '${probDescription}', '${probTechnologies}', '${probSubmissionFormat}', '${probGuidelines}', '${probReference}')`;
+                            let addProblemStatementQuery = `INSERT INTO problemStatement(id, hackathonID, title, description, technologies, refMaterial)
+                                                        VALUES('${problemStatementID}', '${uniqueHackathonID}', '${probTitle}', '${probDescription}', '${probTechnologies}', '${probReference}')`;
 
                             dbObj.query(
                                 addProblemStatementQuery,

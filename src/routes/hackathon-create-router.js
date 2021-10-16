@@ -12,9 +12,13 @@ const path = {
 
 hackathonCreateRouter.post(
     `${path["createHackathon"]}`,
-    requireLogin,
-    validateOrg,
+    // requireLogin,
+    // validateOrg,
     (req, res) => {
+        
+        // Testing Purpose [Because we've removed the 2 middlewares in the above request]
+        req.validOrg = true
+
         async
             .auto({
                 validate_org: function (callback) {
@@ -30,14 +34,14 @@ hackathonCreateRouter.post(
                     function (result, callback) {
                         try{
                             let {
-                                title,
-                                description,
-                                organizedBy,
+                                hackTitle,
+                                hackDescription,
+                                hackCompanyName,
                                 regStart,
                                 regEnd,
                                 hackStart,
                                 hackEnd,
-                                maxParticipants,
+                                totalApplications,
                                 submissionFormats, 
                                 submissionGuidelines,
                                 facebook,
@@ -52,14 +56,14 @@ hackathonCreateRouter.post(
                             } = req.body;
     
                             if (
-                                title &&
-                                description &&
-                                organizedBy &&
+                                hackTitle &&
+                                hackDescription &&
+                                hackCompanyName &&
                                 regStart &&
                                 regEnd &&
                                 hackStart &&
                                 hackEnd &&
-                                maxParticipants &&
+                                totalApplications &&
                                 firstPrizeDesc &&
                                 secondPrizeDesc &&
                                 thirdPrizeDesc &&
@@ -90,32 +94,32 @@ hackathonCreateRouter.post(
                                     let {
                                         probTitle,
                                         probDescription,
-                                        probTechnologies,
-                                        probReference,
+                                        probAcceptedTechs,
+                                        probRefLinks,
                                     } = problemStatement;
                                     if (
                                         probTitle &&
                                         probDescription &&
-                                        probTechnologies &&
-                                        probReference
+                                        probAcceptedTechs &&
+                                        probRefLinks
                                     ) {
                                         //
                                     } else {
                                         validProbStatements = 0;
-                                        callback("Invalid Inputs", null);
+                                        callback("Invalid Inputs 1", null);
                                         return;
                                     }
                                 });
     
                                 if (sponsors.length != 0) {
                                     sponsors.forEach((sponsor) => {
-                                        let { name, imageLink, webLink } = sponsor;
+                                        let { sponsorName, sponsorImageLink, sponsorWebLink } = sponsor;
     
-                                        if (name && imageLink && webLink) {
+                                        if (sponsorName && sponsorImageLink && sponsorWebLink) {
                                             // Valid
                                         } else {
                                             validSponsors = 0;
-                                            callback("Invalid Inputs", null);
+                                            callback("Invalid Inputs 2", null);
                                             return;
                                         }
                                     });
@@ -124,16 +128,16 @@ hackathonCreateRouter.post(
                                 if (validProbStatements && validSponsors) {
                                     return callback(null, "valid");
                                 } else {
-                                    callback("Invalid Inputs", null);
+                                    callback("Invalid Inputs 3", null);
                                     return;
                                 }
                             } else {
-                                callback("Invalid Inputs", null);
+                                callback("Invalid Inputs 4", null);
                                 return;
                             }
                         }
                         catch(err) {
-                            callback("Invalid Inputs", null);
+                            callback("Invalid Inputs 5", null);
                                 return;
                         }
                         
@@ -145,10 +149,10 @@ hackathonCreateRouter.post(
                     "validate_inputs",
                     function (result, callback) {
                         let {
-                            title,
+                            hackTitle,
                         } = req.body;
                         console.log("Validation = ", result)
-                        let hackathonExists = `SELECT title, organizedBy FROM hackathon where title='${title}'`;
+                        let hackathonExists = `SELECT title, organizedBy FROM hackathon where title='${hackTitle}'`;
                         
                         dbObj.query(hackathonExists, (err, results) => {
                             
@@ -174,14 +178,14 @@ hackathonCreateRouter.post(
                     function (result, callback) {
                         console.log("Existing = ", result)
                         let {
-                            title,
-                            description,
-                            organizedBy,
+                            hackTitle,
+                            hackDescription,
+                            hackCompanyName,
                             regStart,
                             regEnd,
                             hackStart,
                             hackEnd,
-                            maxParticipants,
+                            totalApplications,
                             submissionFormats, 
                             submissionGuidelines,
                             facebook,
@@ -195,7 +199,7 @@ hackathonCreateRouter.post(
 
                         let uniqueHackathonID = uuid4();
                         let addHackathonQuery = `INSERT INTO hackathon(id, title, description, organizedBy, regStart, regEnd, hackStart, hackEnd, maxParticipants, submissionFormats, submissionGuidelines, facebook, instagram, twitter, linkedin, firstPrizeDesc, secondPrizeDesc, thirdPrizeDesc) 
-                                                VALUES('${uniqueHackathonID}', '${title}', '${description}', '${organizedBy}', STR_TO_DATE("${regStart}","%d-%m-%Y"), STR_TO_DATE("${regEnd}","%d-%m-%Y"), STR_TO_DATE("${hackStart}","%d-%m-%Y"), STR_TO_DATE("${hackEnd}","%d-%m-%Y"), ${maxParticipants}, '${submissionFormats}', '${submissionGuidelines}', '${facebook}', '${instagram}', '${twitter}', '${linkedIn}', '${firstPrizeDesc}', '${secondPrizeDesc}', '${thirdPrizeDesc}')`;
+                                                VALUES('${uniqueHackathonID}', '${hackTitle}', '${hackDescription}', '${hackCompanyName}', STR_TO_DATE("${regStart}","%d-%m-%Y"), STR_TO_DATE("${regEnd}","%d-%m-%Y"), STR_TO_DATE("${hackStart}","%d-%m-%Y"), STR_TO_DATE("${hackEnd}","%d-%m-%Y"), ${totalApplications}, '${submissionFormats}', '${submissionGuidelines}', '${facebook}', '${instagram}', '${twitter}', '${linkedIn}', '${firstPrizeDesc}', '${secondPrizeDesc}', '${thirdPrizeDesc}')`;
 
                         dbObj.query(addHackathonQuery, (err, results) => {
                             if (err) {
@@ -235,8 +239,8 @@ hackathonCreateRouter.post(
                         //         add_sponsors: function (callback) {
                         sponsors.forEach((sponsor) => {
                             let sponsorID = uuid4();
-                            let { name, imageLink, webLink } = sponsor;
-                            let addSponsorQuery = `INSERT INTO sponsor(id, hackathonID, name, imageLink, webLink) VALUES('${sponsorID}', '${uniqueHackathonID}', '${name}', '${imageLink}', '${webLink}')`;
+                            let { sponsorName, sponsorImageLink, sponsorWebLink } = sponsor;
+                            let addSponsorQuery = `INSERT INTO sponsor(id, hackathonID, name, imageLink, webLink) VALUES('${sponsorID}', '${uniqueHackathonID}', '${sponsorName}', '${sponsorImageLink}', '${sponsorWebLink}')`;
 
                             dbObj.query(addSponsorQuery, (err, result) => {
                                 if (err) {
@@ -270,11 +274,11 @@ hackathonCreateRouter.post(
                             let {
                                 probTitle,
                                 probDescription,
-                                probTechnologies,
-                                probReference,
+                                probAcceptedTechs,
+                                probRefLinks,
                             } = problemStatement;
                             let addProblemStatementQuery = `INSERT INTO problemStatement(id, hackathonID, title, description, technologies, refMaterial)
-                                                        VALUES('${problemStatementID}', '${uniqueHackathonID}', '${probTitle}', '${probDescription}', '${probTechnologies}', '${probReference}')`;
+                                                        VALUES('${problemStatementID}', '${uniqueHackathonID}', '${probTitle}', '${probDescription}', '${probAcceptedTechs}', '${probRefLinks}')`;
 
                             dbObj.query(
                                 addProblemStatementQuery,
@@ -296,11 +300,11 @@ hackathonCreateRouter.post(
             })
             .then((results) => {
                 console.log("Results =", results);
-                // return res.json(results)
+                return res.json(results)
             })
             .catch((err) => {
                 console.log("Error =", err);
-                // return res.status(500).send(err);
+                return res.status(500).send(err);
             });
     }
 );

@@ -1,5 +1,5 @@
 const express = require('express')
-const axious = require('axios')
+const axios = require('axios')
 const dbObj = require('../utils/database-obj');
 const requireLogin = require('../middlewares/require-login');
 const async = require('async');
@@ -20,51 +20,76 @@ let path = {
 // Get Upcoming Hackathons - Async
 hackathonGetRouter.get(
     `${path['getUpcomingHackathons']}`,
-    // requireLogin,
     (req, res)=>{
 
         let date = new Date();
         let currentDate = date.toISOString().split('T')[0]
-
+        console.log("Got Upcoming Hackathon request")
+        console.log("Current Date Format", currentDate);
         // Async
         async.auto({
 
             // Removed for Testing Purpose
 
-            // check_current_user: function(callback){
-            //     if(!req.currentUser){
-            //         callback('Invalid user', null)
-            //         return;
-            //     }
-            //     callback(null, {message: 'valid', currentUser: req.currentUser})
-            // },
+            check_current_user: function(callback){
+
+                let hdr = req.headers;
+    
+                if(hdr){
+                    console.log("Header", hdr);
+                    if(hdr.authorization){
+                        console.log("HEADER AUTH", hdr.authorization)
+                        axios.get('http://localhost:4200/api/user/currentuser', {
+                            headers: {
+                                authorization: hdr.authorization
+                            }
+                        }).then(response=>{
+                            // console.log("Login", response.data)
+                            req.currentUser = response.data.currentUser;
+                            // console.log("C User", req.currentUser)
+                            if(!req.currentUser){
+                                callback('Invalid user', null)
+                                return;
+                            }
+                            callback(null, {message: 'valid', currentUser: req.currentUser})
+                        }).catch(err=>{
+                            callback('User not validated', null);
+                            // return res.status(400).send({message: "User not validated"})
+                        })
+                    }
+                }
+            },
 
             get_upcoming_hackathons: 
-                
+                [
+                    "check_current_user",
+                    function(result, callback){
+                        let getHackathonQuery = `SELECT * from hackathon WHERE date(hackStart) >= '${currentDate}'`;
+    
+                        dbObj.query(getHackathonQuery, (err, results)=>{
+                            if(err){
+                                callback('Error fetching Hackathons from DB', null)
+                                return;
+                            }
+    
+                            if(results && results.length == 0){
+                                callback('No upcoming hackathons', null)
+                                return;
+                            } else{
+                                callback(null, {message: 'valid', upcomingHackathons: results})
+                            }
+                        })
+                    }
+                ]
                 // Removed these things for testing purpose
                 // "check_current_user",
                 // Add ["check_current_user", later on
                 // Add result parameter to below function
 
-                function(callback){
-                    let getHackathonQuery = `SELECT * from hackathon WHERE hackStart >= ${currentDate}`;
-
-                    dbObj.query(getHackathonQuery, (err, results)=>{
-                        if(err){
-                            callback('Error fetching Hackathons from DB', null)
-                            return;
-                        }
-
-                        if(results && results.length == 0){
-                            callback('No upcoming hackathons', null)
-                            return;
-                        } else{
-                            callback(null, {message: 'valid', upcomingHackathons: results})
-                        }
-                    })
-                }
+                
             
         }).then(responses => {
+            console.log("Responses", responses);
             return res.send(responses);
         }).catch(err=>{
             return res.status(500).send(err);

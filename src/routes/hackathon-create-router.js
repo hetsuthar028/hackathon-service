@@ -276,9 +276,10 @@ hackathonCreateRouter.post(
                                 probDescription,
                                 probAcceptedTechs,
                                 probRefLinks,
+                                probSolutionType
                             } = problemStatement;
-                            let addProblemStatementQuery = `INSERT INTO problemStatement(id, hackathonID, title, description, technologies, refMaterial)
-                                                        VALUES('${problemStatementID}', '${uniqueHackathonID}', '${probTitle}', '${probDescription}', '${probAcceptedTechs}', '${probRefLinks}')`;
+                            let addProblemStatementQuery = `INSERT INTO problemStatement(id, hackathonID, title, description, technologies, solutionType, refMaterial)
+                                                        VALUES('${problemStatementID}', '${uniqueHackathonID}', '${probTitle}', '${probDescription}', '${probAcceptedTechs}', '${probSolutionType}' ,'${probRefLinks}')`;
 
                             dbObj.query(
                                 addProblemStatementQuery,

@@ -3,6 +3,8 @@ const axious = require('axios')
 const dbObj = require('../utils/database-obj');
 const requireLogin = require('../middlewares/require-login');
 const async = require('async');
+const jwt = require('jsonwebtoken');
+const { restart } = require('nodemon');
 
 const hackathonGetRouter = express.Router();
 
@@ -11,7 +13,8 @@ let path = {
     getAllHackathons: "/api/hackathon/get/allHackathons",
     getSpecificHackathon: "/api/hackathon/get/id/:hackathonID",
     getPastHackathon: "/api/hackathon/get/pastHackathons",
-    getHackathonSummary: "/api/hackathon/get/hackathonSummary/:hackathonID"
+    getHackathonSummary: "/api/hackathon/get/hackathonSummary/:hackathonID",
+    getCurrentlyRegistered: "/api/hackathon/get/checkregistration/:hackathonID"
 }
 
 // Get Upcoming Hackathons - Async
@@ -103,14 +106,15 @@ hackathonGetRouter.get(
 // Get Specific Hackathon - Async
 hackathonGetRouter.get(`${path['getSpecificHackathon']}`, (req, res)=>{
     
-    // Temp Current User [Because we've removed "requireLogin" middleware from above request]
+    // // Temp Current User [Because we've removed "requireLogin" middleware from above request]
     req.currentUser = {
         email : "hetmewada0028@gmail.com"
     }
     async.auto({
         check_current_user : function(callback){
+            console.log("Current USER FUNCTION ASYNC", req.currentUser)
             if(!req.currentUser){
-                callback('Invalid user', null)
+                callback('Invalid user', {message: "Invalid user"})
                 return;    
             }
             callback(null, {currentUser: req.currentUser, message: "Valid user"})
@@ -157,6 +161,24 @@ hackathonGetRouter.get(`${path['getSpecificHackathon']}`, (req, res)=>{
                     }
                 })
             }
+        ],
+
+        get_sponsors_db: [
+            "get_problem_statements_db",
+            function(result, callback){
+                let hackathonID = result.get_hackathon_db.hackathon.id;
+                let getSponsorsQuery = `SELECT * FROM sponsor WHERE hackathonID='${hackathonID}'`;
+
+                dbObj.query(getSponsorsQuery, (err, results)=>{
+                    if(err){
+                        callback('Error fetching sponsors from DB', null)
+                        return;
+                    }
+                    if(results && results.length !=0){
+                        callback(null, {message: 'valid', sponsors: results})
+                    }
+                })
+            }
         ]
     }).then(responses => {
         console.log("Sent")
@@ -164,9 +186,40 @@ hackathonGetRouter.get(`${path['getSpecificHackathon']}`, (req, res)=>{
         return res.json(responses);
     }).catch(err=>{
         console.log("Recv", err)
-        // res.status(500).send(err);
+        res.status(401).send(err);
     })
-})
+});
+
+
+hackathonGetRouter.get(`${path['getCurrentlyRegistered']}`, 
+    (req, res) => {
+        
+        // @Work-Around
+        // We'll have ContextAPI here to get the current user data
+
+        let currentUser = {
+            // email: "hetmewada0028@gmail.com",
+            // userType: "developer",
+            // userName: "Het Suthar"
+        }
+
+        // @Query - Check if user is already registered
+        let checkUserRegistration = `SELECT * FROM registration where userEmail='${currentUser.email}' and hackathonID='${req.params.hackathonID}'`;
+
+        dbObj.query(checkUserRegistration, (err, results)=> {
+            if(err){
+                console.log("Error checking registration status")
+                return res.status(500).send('Error checking registration status')
+            }
+
+            if(results && results.length !=0){
+                return res.status(200).send({message: 'already registered'})
+            } else {
+                return res.status(200).send({message: 'not registered'})
+            }
+        })
+    }
+)
 
 // hackathonGetRouter.get(`${path["getSpecificHackathon"]}`, requireLogin, (req, res)=>{
 //     if(req.currentUser){

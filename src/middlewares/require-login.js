@@ -7,6 +7,7 @@ const requireLogin = async (req, res, next) =>{
     
     if(hdr){
         if(hdr.authorization){
+            console.log("HEADER AUTH", hdr.authorization)
             await axios.get('http://localhost:4200/api/user/currentuser', {
                 headers: {
                     authorization: hdr.authorization

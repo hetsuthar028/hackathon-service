@@ -11,6 +11,7 @@ paths = {
     createSubmissionTable: '/api/hackathon/createSubmissionTable',
     createSponsorTable: '/api/hackathon/createSponsorTable',
     createWinnerTable: '/api/hackathon/createWinnerTable',
+    createSliderTable: '/api/hackathon/createSliderTable',
     dropHackathonTable: '/api/hackathon/dropHackathonTable',
     dropProblemStatementTable: '/api/hackathon/dropProblemStatementTable',
     dropSponsorTable: '/api/hackathon/dropSponsorTable',
@@ -27,6 +28,7 @@ queries = {
     createSponsorTable: "CREATE TABLE IF NOT EXISTS sponsor(id VARCHAR(50) NOT NULL, hackathonID VARCHAR(50) NOT NULL, name VARCHAR(50) NOT NULL, imageLink TEXT NOT NULL, webLink TEXT NOT NULL, PRIMARY KEY(id), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON DELETE CASCADE ON UPDATE CASCADE)",
     createRegistrationTable: "CREATE TABLE IF NOT EXISTS registration(id VARCHAR(50) NOT NULL, userEmail VARCHAR(50) NOT NULL, hackathonID VARCHAR(50) NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(hackathonID, userEmail), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON DELETE CASCADE ON UPDATE CASCADE)",
     createWinnerTable: "CREATE TABLE IF NOT EXISTS winner(userEmail VARCHAR(50) NOT NULL, hackathonID VARCHAR(50) NOT NULL, prize INT NOT NULL, PRIMARY KEY(userEmail, hackathonID), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON UPDATE CASCADE)",
+    createSliderTable: "CREATE TABLE IF NOT EXISTS slider(id VARCHAR(50) NOT NULL, title VARCHAR(50) NOT NULL, subtitle VARCHAR(50) NOT NULL, imagePath TEXT NOT NULL, hackathonID VARCHAR(50) NOT NULL, PRIMARY KEY(id), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON DELETE CASCADE ON UPDATE CASCADE)",
     dropHackathonTable: "DROP TABLE hackathon",
     dropProblemStatementTable: "DROP TABLE problemStatement",
     dropSponsorTable: "DROP TABLE submission",
@@ -125,6 +127,19 @@ schemaRouter.get(paths['createWinnerTable'], (req, res)=>{
         return res.send({message: 'Winner Table created successfully'});
     });
 });
+
+// @Query - CREATE SLIDERS TABLE
+schemaRouter.get(paths['createSliderTable'], (req, res) => {
+    dbObj.query(queries['createSliderTable'], (err, resilt) => {
+        if(err){
+            console.log("Error creating Slider Table");
+            throw new Error("Error creating Slider Table");
+        }
+
+        console.log("Slider table created succesfully");
+        return res.status(200).send({success: true, message: "Slider table created succesfully"});
+    })
+})
 
 
 // @Query - DROP HACKATHON TABLE

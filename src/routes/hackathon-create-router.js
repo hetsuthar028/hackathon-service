@@ -5,13 +5,53 @@ const validateOrg = require("../middlewares/validate-org");
 const { v4: uuid4, validate } = require("uuid");
 const async = require("async");
 const hackathonCreateRouter = express.Router();
+const axios = require('axios');
+const concat = require("concat-stream")
 
-const path = {
+const firebaseConfig = require('../../FirebaseConfig');
+
+const firebaseApp = require('firebase/app');
+firebaseApp.initializeApp(firebaseConfig)
+
+const { getStorage, ref, uploadBytes, getDownloadURL } = require('firebase/storage');
+const storage = getStorage();
+const path = require('path');
+
+const fs = require('fs');
+
+const multer  = require('multer')
+// const upload = multer({ dest: 'uploads/' })
+
+const storageMulter = multer.diskStorage({
+    destination: function(req, file, cb) {
+        cb(null, 'uploads/');
+    },
+
+    filename: function(req, file, cb) {
+        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({ storage: storageMulter })
+
+var FormData = require('form-data');
+
+let filename = "C://Users/hetme/Desktop/Sem 7.png"
+let fileData;
+
+const metadata = {
+    contentType: 'image/jpeg',
+};
+
+const paths = {
     createHackathon: "/api/hackathon/create",
+    uploadFilePath: "/api/hackathon/upload",
+    tempUpload: "/api/hackathon/tempUpload",
+    uploadSliderImage: "/api/hackathon/upload/slidersImage"
 };
 
 hackathonCreateRouter.post(
-    `${path["createHackathon"]}`,
+    `${paths["createHackathon"]}`,
     // requireLogin,
     // validateOrg,
     (req, res) => {
@@ -53,8 +93,9 @@ hackathonCreateRouter.post(
                                 thirdPrizeDesc,
                                 problemStatements,
                                 sponsors,
+                                sliders,
                             } = req.body;
-    
+                            console.log("Slider", sliders);
                             if (
                                 hackTitle &&
                                 hackDescription &&
@@ -69,10 +110,12 @@ hackathonCreateRouter.post(
                                 thirdPrizeDesc &&
                                 submissionFormats &&
                                 submissionGuidelines &&
+                                sliders.length !=0 &&
                                 problemStatements.length != 0
                             ) {
                                 let validProbStatements = 1;
                                 let validSponsors = 1;
+                                let validSliders = 1;
     
                                 if (!facebook) {
                                     facebook = "";
@@ -124,8 +167,21 @@ hackathonCreateRouter.post(
                                         }
                                     });
                                 }
+
+                                sliders.forEach((slider) => {
+                                    let { sliderTitle, sliderSubtitle, sliderImage } = slider;
+
+                                    if( slider.sliderTitle && slider.sliderSubtitle ){
+                                        // Pass
+                                    } else {
+                                        console.log("Inv Slider", slider);
+                                        validSliders = 0;
+                                        callback("Invalid slider data", null)
+                                        return;
+                                    }
+                                })
     
-                                if (validProbStatements && validSponsors) {
+                                if (validProbStatements && validSponsors && validSliders) {
                                     return callback(null, "valid");
                                 } else {
                                     callback("Invalid Inputs 3", null);
@@ -137,6 +193,7 @@ hackathonCreateRouter.post(
                             }
                         }
                         catch(err) {
+                            console.log("At 178", err);
                             callback("Invalid Inputs 5", null);
                                 return;
                         }
@@ -297,6 +354,47 @@ hackathonCreateRouter.post(
                         });
                         callback(null, 'Problem statements added')
                     },
+                ],
+
+                upload_sliders_img_storage: [
+                    "add_problem_statements_db",
+                    function(result, callback){
+                        let { localUploadedFilesPath } = req.body
+                        axios.post('http://localhost:4400/api/hackathon/upload/slidersImage', {
+                            localUploadedFilesPath
+                        }).then((resp) => {
+                            callback(null, {urls: resp.data.fileUrls});
+                        }).catch((err) => {
+                            callback('Error uploading slider images', null);
+                        })
+                    }
+                ],
+
+                add_sliders_db: [
+                    "upload_sliders_img_storage",
+                    function(result, callback){
+                        let prevLinks = result.upload_sliders_img_storage.urls;
+                        console.log("Prev Links", prevLinks)
+                        let uniqueHackathonID = result.add_hackathon_db.uniqueHackathonID;
+                        let {sliders} = req.body;
+
+                        sliders.map((slider, idx) => {
+                            let sliderId = uuid4();
+                            let insertSliderQuery = `INSERT INTO slider(id, title, subtitle, imagePath, hackathonID) 
+                                                    VALUES('${sliderId}', '${slider.sliderTitle}', '${slider.sliderSubtitle}', '${prevLinks[idx]}', '${uniqueHackathonID}')`;
+
+                            dbObj.query(insertSliderQuery, (err, data) => {
+                                if(err){
+                                    console.log("Error adding slider data to DB");
+                                    callback("Error adding slider data to DB", null)
+                                }
+
+                                console.log("Slider data added successfully")
+                                callback(null, "Sliders added")
+                            })
+                        })
+                        
+                    }
                 ]
             })
             .then((results) => {
@@ -309,6 +407,103 @@ hackathonCreateRouter.post(
             });
     }
 );
+
+// hackathonCreateRouter.post(`${path["uploadFilePath"]}`, upload.single('userImage'),(req, res) => {
+
+//     // images/mountains.jpg
+//     const storageRef = ref(storage, `hackathons/posters/${uuid4()}.jpg`);
+
+//     fs.readFile(req.file.path, (err, data) => {
+//         fileData = data;
+
+//         uploadBytes(storageRef, fileData, metadata).then((snapshot) => {
+//             console.log('Uploaded a blob or file!');
+//             getDownloadURL(storageRef).then((url) => {
+//                 console.log("URL", url)
+//                 res.status(200).send({success: true, downloadUrl: url});
+//             }).catch(err => {
+//                 console.log("ERR: ", err);
+//             })
+//         });
+//     })
+// });
+
+hackathonCreateRouter.post(`${paths["uploadSliderImage"]}`, (req, res)=> {
+    let { localUploadedFilesPath } = req.body
+    let fileUrls = []
+
+    localUploadedFilesPath.map(async (imgPath) => {
+        const storageRef = ref(storage, `hackathons/posters/${uuid4()}.png`);
+
+        await fs.readFile(imgPath, async (err, data) => {
+            await uploadBytes(storageRef, data, metadata).then( async (snapshot) => {
+                console.log('Uploaded a blob or file!')
+                await getDownloadURL(storageRef).then((url) => {
+                    console.log("URL", url);
+                    fileUrls.push(url);
+                }).catch((err) => {
+                    console.log("ERR2: ", err);
+                })
+
+            })
+        })
+    })
+    
+    console.log("Sent Links");
+    return res.status(200).send({success: true, fileUrls: fileUrls});
+})
+
+hackathonCreateRouter.post(`${paths["uploadFilePath"]}`, upload.single('userImage'), (req, res) => {
+
+    // images/mountains.jpg
+    const storageRef = ref(storage, `hackathons/posters/${uuid4()}.jpg`);
+
+    console.log("Request File", req.file)
+
+    // fs.readFile(req.file.path, (err, data) => {
+    //     fileData = data;
+
+    //     uploadBytes(storageRef, fileData, metadata).then((snapshot) => {
+    //         console.log('Uploaded a blob or file!');
+    //         getDownloadURL(storageRef).then((url) => {
+    //             console.log("URL", url)
+    //             res.status(200).send({success: true, downloadUrl: url});
+    //         }).catch(err => {
+    //             console.log("ERR: ", err);
+    //         })
+    //     });
+    // })
+});
+
+hackathonCreateRouter.post(`${paths["tempUpload"]}`, upload.array("userImage", 10), (req, res) => {
+    // let { sliders } = req.body;
+    console.log("Sliders::", req.files);
+
+    let tempData = [
+        {
+            sliderTitle: "Title1",
+            sliderSubTitle: "Subtitle1",
+
+        }
+    ]
+
+    let filePaths = []
+
+    req.files.map((f) => {
+        filePaths.push(f.path);
+    })
+
+    return res.status(200).send({success: true, files: filePaths})
+    // let 
+
+    // let formData = new FormData();
+    // formData.append('userImage', req.file)
+
+    // axios.post('http://localhost:4400/api/hackathon/', {
+
+    // })
+
+})
 
 // hackathonCreateRouter.post(
 //     `${path["createHackathon"]}`,

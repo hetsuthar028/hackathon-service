@@ -204,6 +204,23 @@ hackathonGetRouter.get(`${path['getSpecificHackathon']}`, (req, res)=>{
                     }
                 })
             }
+        ],
+        get_sliders_db: [
+            "get_sponsors_db",
+            function(result, callback){
+                let hackathonID = result.get_hackathon_db.hackathon.id;
+                let getSlidersQuery = `SELECT * FROM slider WHERE hackathonID='${hackathonID}'`;
+
+                dbObj.query(getSlidersQuery, (err, results) => {
+                    if(err){
+                        callback('Error fetching sliders from DB', null);
+                        return;
+                    }
+                    if(results && results.length !=0){
+                        callback(null, {success: true, sliders: results});
+                    }
+                })
+            }
         ]
     }).then(responses => {
         console.log("Sent")

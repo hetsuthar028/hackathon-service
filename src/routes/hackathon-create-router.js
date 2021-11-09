@@ -361,7 +361,8 @@ hackathonCreateRouter.post(
                     function(result, callback){
                         let { localUploadedFilesPath } = req.body
                         axios.post('http://localhost:4400/api/hackathon/upload/slidersImage', {
-                            localUploadedFilesPath
+                            localUploadedFilesPath,
+                            location: "hacakthons/posters/"
                         }).then((resp) => {
                             callback(null, {urls: resp.data.fileUrls});
                         }).catch((err) => {
@@ -390,10 +391,10 @@ hackathonCreateRouter.post(
                                 }
 
                                 console.log("Slider data added successfully")
-                                callback(null, "Sliders added")
+                                
                             })
                         })
-                        
+                        callback(null, "Sliders added")
                     }
                 ]
             })
@@ -429,28 +430,70 @@ hackathonCreateRouter.post(
 // });
 
 hackathonCreateRouter.post(`${paths["uploadSliderImage"]}`, (req, res)=> {
-    let { localUploadedFilesPath } = req.body
+    let { localUploadedFilesPath, location } = req.body
     let fileUrls = []
+    let allFileData = [];
 
-    localUploadedFilesPath.map(async (imgPath) => {
-        const storageRef = ref(storage, `hackathons/posters/${uuid4()}.png`);
+    // localUploadedFilesPath.map((imgPath, idx) => {
+    //     console.log("Reading File", idx);
+    //     allFileData.push(fs.readFileSync(imgPath));
+    // });
 
-        await fs.readFile(imgPath, async (err, data) => {
-            await uploadBytes(storageRef, data, metadata).then( async (snapshot) => {
-                console.log('Uploaded a blob or file!')
-                await getDownloadURL(storageRef).then((url) => {
-                    console.log("URL", url);
-                    fileUrls.push(url);
-                }).catch((err) => {
-                    console.log("ERR2: ", err);
-                })
+    // const uploadAllData = (resolve, reject) => {
+    //     allFileData.map((data, idx) => {
+    //         console.log("Uploading File", idx);
+    //         const storageRef = ref(storage, `hackathons/posters/${uuid4()}.png`);
+    //         uploadBytes(storageRef, data, metadata).then((snapshot) => {
+    //             console.log('Uploaded a blob or file!')
+    //             getDownloadURL(storageRef).then((url) => {
+    //                 console.log("URL", url);
+    //                 fileUrls.push(url);
+    //             }).catch((err) => {
+    //                 console.log("ERR2: ", err);
+    //             })
+    //         })
+    //     });
 
+    //     resolve(fileUrls);
+    // }
+
+    // (new Promise(uploadAllData)).then((urls) => {
+    //     console.log("All File URLS", urls, fileUrls);
+    //     return res.status(200).send({success: true, fileUrls: fileUrls});
+    // })
+
+    localUploadedFilesPath.map(async (imgPath, idx) => {
+        console.log("Inside map", idx)
+
+        const storageRef = ref(storage, `${location}${uuid4()}.png`);
+        console.log("Inside map(1)", idx)
+
+        let data = fs.readFileSync( imgPath );
+        console.log("File read")
+        await uploadBytes(storageRef, data, metadata).then(async (snapshot) => {
+            console.log('Uploaded a blob or file!')
+            await getDownloadURL(storageRef).then((url) => {
+                console.log("URL", url);
+                fileUrls.push(url);
+            }).catch((err) => {
+                console.log("ERR2: ", err);
             })
+
         })
-    })
-    
-    console.log("Sent Links");
-    return res.status(200).send({success: true, fileUrls: fileUrls});
+
+        console.log("Outside")
+        if(localUploadedFilesPath.length == fileUrls.length){
+            console.log("Sent Links");
+            return res.status(200).send({success: true, fileUrls: fileUrls});
+        }
+        
+    });
+
+    console.log("Outside")
+    // if(localUploadedFilesPath.length == fileUrls.length){
+    //     console.log("Sent Links");
+    //     return res.status(200).send({success: true, fileUrls: fileUrls});
+    // }
 })
 
 hackathonCreateRouter.post(`${paths["uploadFilePath"]}`, upload.single('userImage'), (req, res) => {

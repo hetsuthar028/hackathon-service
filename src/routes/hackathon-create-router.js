@@ -47,7 +47,7 @@ const paths = {
     createHackathon: "/api/hackathon/create",
     uploadFilePath: "/api/hackathon/upload",
     tempUpload: "/api/hackathon/tempUpload",
-    uploadSliderImage: "/api/hackathon/upload/slidersImage"
+    uploadSliderImage: "/api/hackathon/upload/imagetostorage"
 };
 
 hackathonCreateRouter.post(
@@ -158,11 +158,11 @@ hackathonCreateRouter.post(
                                     sponsors.forEach((sponsor) => {
                                         let { sponsorName, sponsorImageLink, sponsorWebLink } = sponsor;
     
-                                        if (sponsorName && sponsorImageLink && sponsorWebLink) {
+                                        if (sponsorName && sponsorWebLink) {
                                             // Valid
                                         } else {
                                             validSponsors = 0;
-                                            callback("Invalid Inputs 2", null);
+                                            // callback("Invalid Inputs 2", null);
                                             return;
                                         }
                                     });
@@ -184,6 +184,7 @@ hackathonCreateRouter.post(
                                 if (validProbStatements && validSponsors && validSliders) {
                                     return callback(null, "valid");
                                 } else {
+                                    console.log(validProbStatements, validSponsors, validSliders)
                                     callback("Invalid Inputs 3", null);
                                     return;
                                 }
@@ -194,7 +195,7 @@ hackathonCreateRouter.post(
                         }
                         catch(err) {
                             console.log("At 178", err);
-                            callback("Invalid Inputs 5", null);
+                            // callback("Invalid Inputs 5", null);
                                 return;
                         }
                         
@@ -279,14 +280,31 @@ hackathonCreateRouter.post(
                     },
                 ],
 
+                upload_sponsors_img_storage: [
+                    "add_hackathon_db",
+                    function(result, callback){
+                        let { localUploadedSponsorsFilesPath } = req.body;
+                        console.log("Local Sponsor Path", localUploadedSponsorsFilesPath)
+                        axios.post('http://localhost:4400/api/hackathon/upload/imagetostorage', {
+                            localUploadedFilesPath: localUploadedSponsorsFilesPath,
+                            location: "hackathons/sponsors/"
+                        }).then((resp) => {
+                            callback(null, { urls: resp.data.fileUrls })
+                        }).catch((err) => {
+                            callback('Error uploading sponsor images', null);
+                        })
+                    }
+                ],
+
                 // Add sponsors into DB
                 add_sponsors_db: [
-                    "add_hackathon_db",
+                    "upload_sponsors_img_storage",
                     function (result, callback) {
                         let uniqueHackathonID =
                             result.add_hackathon_db.uniqueHackathonID;
 
-                        console.log("Add Hackathon result =", result);
+                        let prevLinks = result.upload_sponsors_img_storage.urls;
+                        console.log("Prev Links 2", prevLinks);
                         let {
                             sponsors,
                         } = req.body;
@@ -294,10 +312,9 @@ hackathonCreateRouter.post(
                         // async
                         //     .auto({
                         //         add_sponsors: function (callback) {
-                        sponsors.forEach((sponsor) => {
+                        sponsors.forEach((sponsor, idx) => {
                             let sponsorID = uuid4();
-                            let { sponsorName, sponsorImageLink, sponsorWebLink } = sponsor;
-                            let addSponsorQuery = `INSERT INTO sponsor(id, hackathonID, name, imageLink, webLink) VALUES('${sponsorID}', '${uniqueHackathonID}', '${sponsorName}', '${sponsorImageLink}', '${sponsorWebLink}')`;
+                            let addSponsorQuery = `INSERT INTO sponsor(id, hackathonID, name, imageLink, webLink) VALUES('${sponsorID}', '${uniqueHackathonID}', '${sponsor.sponsorName}', '${prevLinks[idx]}', '${sponsor.sponsorWebLink}')`;
 
                             dbObj.query(addSponsorQuery, (err, result) => {
                                 if (err) {
@@ -359,10 +376,10 @@ hackathonCreateRouter.post(
                 upload_sliders_img_storage: [
                     "add_problem_statements_db",
                     function(result, callback){
-                        let { localUploadedFilesPath } = req.body
-                        axios.post('http://localhost:4400/api/hackathon/upload/slidersImage', {
-                            localUploadedFilesPath,
-                            location: "hacakthons/posters/"
+                        let { localUploadedSlidersFilesPath } = req.body
+                        axios.post('http://localhost:4400/api/hackathon/upload/imagetostorage', {
+                            localUploadedFilesPath: localUploadedSlidersFilesPath,
+                            location: "hackathons/posters/"
                         }).then((resp) => {
                             callback(null, {urls: resp.data.fileUrls});
                         }).catch((err) => {
@@ -520,15 +537,15 @@ hackathonCreateRouter.post(`${paths["uploadFilePath"]}`, upload.single('userImag
 
 hackathonCreateRouter.post(`${paths["tempUpload"]}`, upload.array("userImage", 10), (req, res) => {
     // let { sliders } = req.body;
-    console.log("Sliders::", req.files);
+    console.log("Image Files::", req.files);
 
-    let tempData = [
-        {
-            sliderTitle: "Title1",
-            sliderSubTitle: "Subtitle1",
+    // let tempData = [
+    //     {
+    //         sliderTitle: "Title1",
+    //         sliderSubTitle: "Subtitle1",
 
-        }
-    ]
+    //     }
+    // ]
 
     let filePaths = []
 
@@ -536,7 +553,7 @@ hackathonCreateRouter.post(`${paths["tempUpload"]}`, upload.array("userImage", 1
         filePaths.push(f.path);
     })
 
-    return res.status(200).send({success: true, files: filePaths})
+    return res.status(200).send({success: true, filePaths: filePaths})
     // let 
 
     // let formData = new FormData();

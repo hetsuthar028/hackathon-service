@@ -263,6 +263,72 @@ hackathonGetRouter.get(`${path['getCurrentlyRegistered']}`,
     }
 )
 
+hackathonGetRouter.get(`${path["getPastHackathon"]}`, (req, res) => {
+    let date = new Date();
+    let currentDate = date.toISOString().split('T')[0]
+
+    async.auto({
+        check_current_user: function(callback){
+            let hdr = req.headers;
+
+            if(hdr){
+                console.log("Header", hdr);
+                if(hdr.authorization){
+                    console.log("HEADER AUTH", hdr.authorization)
+                    axios.get('http://localhost:4200/api/user/currentuser', {
+                        headers: {
+                            authorization: hdr.authorization
+                        }
+                    }).then(response=>{
+                        // console.log("Login", response.data)
+                        req.currentUser = response.data.currentUser;
+                        // console.log("C User", req.currentUser)
+                        if(!req.currentUser){
+                            callback('Invalid user', null)
+                            return;
+                        }
+                        callback(null, {message: 'valid', currentUser: req.currentUser})
+                    }).catch(err=>{
+                        callback('User not validated', null);
+                        // return res.status(400).send({message: "User not validated"})
+                    })
+                } else {
+                    return callback('No Auth Header - Invalid user', null);
+                }
+            } else {
+                return callback('No headers - Invalid user', null);
+            }
+        },
+
+        get_past_hackathons_db: [
+            "check_current_user",
+            function(result, callback){
+                let getPastHackathonsQuery = `SELECT * FROM hackathon where date(hackEnd) <= '${currentDate}'`;
+
+                dbObj.query(getPastHackathonsQuery, (err, results) => {
+                    if(err){
+                        console.log("Error fetching past hackathons")
+                        return callback("Error fetching past hackathons", null);
+                    }
+
+                    if(results && results.length == 0){
+                        return callback('No upcoming hackathons', null);
+                    }
+                    
+                    return callback(null, {message: 'valid', pastHackathons: results})
+                })
+            }
+        ]
+    }).then((responses) => {
+        console.log("Responses", responses);
+        return res.status(200).send({success: true, responses })
+    }).catch((err) => {
+        return res.status(500).send(err);
+    })
+
+
+});
+
 // hackathonGetRouter.get(`${path["getSpecificHackathon"]}`, requireLogin, (req, res)=>{
 //     if(req.currentUser){
 //         let hackathonID = req.params.hackathonID;

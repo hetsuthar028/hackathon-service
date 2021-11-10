@@ -161,7 +161,7 @@ hackathonGetRouter.get(`${path['getSpecificHackathon']}`, (req, res)=>{
                     return;
                 }
                 else {
-                    console.log("Valid SEnd HACK")
+                    console.log("Valid SEnd HACK", results[0])
                     callback(null, {message: 'valid', hackathon: results[0]})
                 }
             })
@@ -181,7 +181,7 @@ hackathonGetRouter.get(`${path['getSpecificHackathon']}`, (req, res)=>{
                         return;
                     }
                     if(results && results.length !=0){
-                        console.log("Valid send prob")
+                        console.log("Valid send prob", results[0])
                         callback(null, {message: 'valid', problemStatements: results})
                     }
                 })
@@ -200,6 +200,7 @@ hackathonGetRouter.get(`${path['getSpecificHackathon']}`, (req, res)=>{
                         return;
                     }
                     if(results && results.length !=0){
+                        console.log("Valid send sponsors", results[0])
                         callback(null, {message: 'valid', sponsors: results})
                     }
                 })
@@ -217,7 +218,11 @@ hackathonGetRouter.get(`${path['getSpecificHackathon']}`, (req, res)=>{
                         return;
                     }
                     if(results && results.length !=0){
+                        console.log("Valid send slider", results[0])
                         callback(null, {success: true, sliders: results});
+                    } else {
+                        console.log("Empty sliders")
+                        return callback(null, {success: true, sliders: results});
                     }
                 })
             }
@@ -233,17 +238,20 @@ hackathonGetRouter.get(`${path['getSpecificHackathon']}`, (req, res)=>{
 });
 
 
-hackathonGetRouter.get(`${path['getCurrentlyRegistered']}`, 
+hackathonGetRouter.post(`${path['getCurrentlyRegistered']}`, 
     (req, res) => {
         
         // @Work-Around
         // We'll have ContextAPI here to get the current user data
 
-        let currentUser = {
+        // let currentUser = {
             // email: "hetmewada0028@gmail.com",
             // userType: "developer",
             // userName: "Het Suthar"
-        }
+        // }
+
+        let { currentUser } = req.body;
+        console.log("Current User Check Registration", req.params, req.body)
 
         // @Query - Check if user is already registered
         let checkUserRegistration = `SELECT * FROM registration where userEmail='${currentUser.email}' and hackathonID='${req.params.hackathonID}'`;
@@ -268,41 +276,40 @@ hackathonGetRouter.get(`${path["getPastHackathon"]}`, (req, res) => {
     let currentDate = date.toISOString().split('T')[0]
 
     async.auto({
-        check_current_user: function(callback){
-            let hdr = req.headers;
+        // check_current_user: function(callback){
+        //     let hdr = req.headers;
 
-            if(hdr){
-                console.log("Header", hdr);
-                if(hdr.authorization){
-                    console.log("HEADER AUTH", hdr.authorization)
-                    axios.get('http://localhost:4200/api/user/currentuser', {
-                        headers: {
-                            authorization: hdr.authorization
-                        }
-                    }).then(response=>{
-                        // console.log("Login", response.data)
-                        req.currentUser = response.data.currentUser;
-                        // console.log("C User", req.currentUser)
-                        if(!req.currentUser){
-                            callback('Invalid user', null)
-                            return;
-                        }
-                        callback(null, {message: 'valid', currentUser: req.currentUser})
-                    }).catch(err=>{
-                        callback('User not validated', null);
-                        // return res.status(400).send({message: "User not validated"})
-                    })
-                } else {
-                    return callback('No Auth Header - Invalid user', null);
-                }
-            } else {
-                return callback('No headers - Invalid user', null);
-            }
-        },
+        //     if(hdr){
+        //         console.log("Header", hdr);
+        //         if(hdr.authorization){
+        //             console.log("HEADER AUTH", hdr.authorization)
+        //             axios.get('http://localhost:4200/api/user/currentuser', {
+        //                 headers: {
+        //                     authorization: hdr.authorization
+        //                 }
+        //             }).then(response=>{
+        //                 // console.log("Login", response.data)
+        //                 req.currentUser = response.data.currentUser;
+        //                 // console.log("C User", req.currentUser)
+        //                 if(!req.currentUser){
+        //                     callback('Invalid user', null)
+        //                     return;
+        //                 }
+        //                 callback(null, {message: 'valid', currentUser: req.currentUser})
+        //             }).catch(err=>{
+        //                 callback('User not validated', null);
+        //                 // return res.status(400).send({message: "User not validated"})
+        //             })
+        //         } else {
+        //             return callback('No Auth Header - Invalid user', null);
+        //         }
+        //     } else {
+        //         return callback('No headers - Invalid user', null);
+        //     }
+        // },
 
-        get_past_hackathons_db: [
-            "check_current_user",
-            function(result, callback){
+        get_past_hackathons_db: 
+            function(callback){
                 let getPastHackathonsQuery = `SELECT * FROM hackathon where date(hackEnd) <= '${currentDate}'`;
 
                 dbObj.query(getPastHackathonsQuery, (err, results) => {
@@ -318,7 +325,7 @@ hackathonGetRouter.get(`${path["getPastHackathon"]}`, (req, res) => {
                     return callback(null, {message: 'valid', pastHackathons: results})
                 })
             }
-        ]
+        
     }).then((responses) => {
         console.log("Responses", responses);
         return res.status(200).send({success: true, responses })

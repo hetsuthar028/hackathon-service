@@ -23,38 +23,39 @@ hackathonRegisterRouter.post(`${path["registerForHackathon"]}`, (req, res)=>{
         email: 'hetmewada0028@gmail.com', username: 'Het Suthar', userType: 'developer'
     }
     req.validDev = true
+
+    let {currentUser} = req.body;
     
     async.auto({
-        validate_user: function(callback){
-            try{
-                if(req.currentUser){
-                    callback(null, 'valid');
-                } else {
-                    return callback('Not Authenticated', null)
-                }
-            } catch(err){
-                return callback('Not Authenticated', null)
-            }
-        },
+        // validate_user: function(callback){
+        //     try{
+        //         if(req.currentUser){
+        //             callback(null, 'valid');
+        //         } else {
+        //             return callback('Not Authenticated', null)
+        //         }
+        //     } catch(err){
+        //         return callback('Not Authenticated', null)
+        //     }
+        // },
 
-        authorize_user: [
-            "validate_user",
-            function(result, callback){
-                try{
-                    if(req.validDev){
-                        callback(null, 'authorized')
-                    } else{
-                        return callback('Not Authorized', null)
-                    }
-                } catch(err){
-                    return callback('Not Authorized', null)
-                }
-            }
-        ],
+        // authorize_user: [
+        //     "validate_user",
+        //     function(result, callback){
+        //         try{
+        //             if(req.validDev){
+        //                 callback(null, 'authorized')
+        //             } else{
+        //                 return callback('Not Authorized', null)
+        //             }
+        //         } catch(err){
+        //             return callback('Not Authorized', null)
+        //         }
+        //     }
+        // ],
 
-        check_existing_hackathon: [
-            "authorize_user",
-            function(result, callback){
+        check_existing_hackathon: 
+            function(callback){
                 let hackathonID = req.params.hackathonID;
                 let hackathonExistsQuery = `SELECT id, maxParticipants, participantCount FROM hackathon WHERE id='${hackathonID}'`
                 console.log("Hackathon ID", hackathonID);
@@ -72,13 +73,14 @@ hackathonRegisterRouter.post(`${path["registerForHackathon"]}`, (req, res)=>{
                     }
                 })
             }
-        ],
+        ,
 
         already_registered_db: [
             "check_existing_hackathon",
             function(result, callback){
                 let hackathonID = req.params.hackathonID;
-                let alreadyRegisteredQuery = `SELECT userEmail FROM registration WHERE userEmail='${req.currentUser.email}' and hackathonID='${hackathonID}'`;
+                
+                let alreadyRegisteredQuery = `SELECT userEmail FROM registration WHERE userEmail='${currentUser.email}' and hackathonID='${hackathonID}'`;
 
                 dbObj.query(alreadyRegisteredQuery, (err, results) => {
                     if(err){
@@ -120,7 +122,7 @@ hackathonRegisterRouter.post(`${path["registerForHackathon"]}`, (req, res)=>{
             function(result, callback){
                 let uniqueRegID = uuid4();
                 console.log("Hacakthon ID", req.params.hackathonID)
-                let registerUserQuery = `INSERT INTO registration(id, userEmail, hackathonID) VALUES('${uniqueRegID}', '${req.currentUser.email}', '${req.params.hackathonID}')`;
+                let registerUserQuery = `INSERT INTO registration(id, userEmail, hackathonID) VALUES('${uniqueRegID}', '${currentUser.email}', '${req.params.hackathonID}')`;
 
                 dbObj.query(registerUserQuery, (err, results) => {
                     if(err){

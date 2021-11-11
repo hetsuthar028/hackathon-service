@@ -18,9 +18,11 @@ const storage = getStorage();
 const path = require('path');
 
 const fs = require('fs');
-
+const csv = require('csv-parser');
+const csvResults = [];
 const multer  = require('multer')
 // const upload = multer({ dest: 'uploads/' })
+const readXlsxFile = require('read-excel-file/node');
 
 const storageMulter = multer.diskStorage({
     destination: function(req, file, cb) {
@@ -47,7 +49,8 @@ const paths = {
     createHackathon: "/api/hackathon/create",
     uploadFilePath: "/api/hackathon/upload",
     tempUpload: "/api/hackathon/tempUpload",
-    uploadSliderImage: "/api/hackathon/upload/imagetostorage"
+    uploadSliderImage: "/api/hackathon/upload/imagetostorage",
+    parseExcel: "/api/hackathon/parse/excel"
 };
 
 hackathonCreateRouter.post(
@@ -562,6 +565,70 @@ hackathonCreateRouter.post(`${paths["tempUpload"]}`, upload.array("userImage", 1
     // axios.post('http://localhost:4400/api/hackathon/', {
 
     // })
+
+});
+
+hackathonCreateRouter.post(`${paths["parseExcel"]}`, (req, res) => {
+    let { filePath } = req.body;
+
+    // let data = fs.readFileSync(filePath);
+    // console.log("Data", data);
+    // let data = fs.createReadStream(filePath, 'utf-8')
+    // console.log("CSV Data", data.toString());
+    const schema = {
+        'Title': {
+          // JSON object property name.
+          prop: 'probTitle',
+          type: String,
+          required: true
+        },
+        'Description': {
+          prop: 'probDescription',
+          type: String,
+          required: true
+        },
+        'Solution Type': {
+            prop: 'probSolutionType',
+            type: String,
+            oneOf: [
+              'Mobile-Android App',
+              'Web Application',
+              'Desktop Application',
+              'Console Application',
+            ],
+            required: true
+        },    
+        'Accepted Technologies': {
+            prop: 'probAcceptedTechs',
+            type: String,
+            required: true,
+        },
+        'Reference Links':{
+            prop: 'probRefLinks',
+            type: String,
+            required: true
+        },
+    }
+
+    readXlsxFile(path.join(__dirname, `../../${filePath}`), {schema}).then(({rows, errors}) => {
+        if(errors.length !=0){
+            console.log("Excel Parsing Errors", rows);
+            return res.status(500).send({success: false, errors: errors});
+        }
+        console.log("Excel Parsed Data", rows);
+        res.status(200).send({success: true, parsedData: rows});
+        return res.end();
+    })
+
+    
+
+    // fs.createReadStream(tempPath)
+    //     .pipe(csv())
+    //     .on('data', (data) => csvResults.push(data))
+    //     .on('end', () => {
+    //         console.log("CSV Results", csvResults);
+    //         return res.status(200).send({success: true, csvResults});
+    //     })
 
 })
 

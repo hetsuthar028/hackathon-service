@@ -50,7 +50,8 @@ const paths = {
     uploadFilePath: "/api/hackathon/upload",
     tempUpload: "/api/hackathon/tempUpload",
     uploadSliderImage: "/api/hackathon/upload/imagetostorage",
-    parseExcel: "/api/hackathon/parse/excel"
+    parseExcel: "/api/hackathon/parse/excel",
+    uploadSubmission: "/api/hackathon/upload/submission/storage"
 };
 
 hackathonCreateRouter.post(
@@ -630,6 +631,78 @@ hackathonCreateRouter.post(`${paths["parseExcel"]}`, (req, res) => {
     //         return res.status(200).send({success: true, csvResults});
     //     })
 
+});
+
+hackathonCreateRouter.post(`${paths["uploadSubmission"]}`, (req, res) => {
+    let { filePath, userEmail, hackathonID, problemStatementID } = req.body;
+    console.log("Req Data", req.body);
+
+    async.auto({
+        check_user_prev_submission_status: 
+            function(callback){
+                const existingUserSubmissionQuery = `SELECT * FROM submission WHERE userEmail='${userEmail}' AND hackathonID='${hackathonID}'`
+                dbObj.query(existingUserSubmissionQuery, (err, data) => {
+                    if(err){
+                        console.log("Error checking user's prev submissions", err);
+                        return callback(err, null);
+                    }
+
+                    if(data.length == 1){
+                        return callback('User has already submitted', null);
+                    } else {
+                        return callback(null, {success: true});
+                    }
+                })
+                
+        },
+
+        upload_submission_storage:[
+            "check_user_prev_submission_status",
+                function(result, callback){
+                    console.log("Submission File Extension", path.extname(filePath));
+
+                    const submissionStorageRef = ref(storage, `/hackathons/submissions/${uuid4()}${path.extname(filePath)}`)
+
+                    let data = fs.readFileSync(filePath);
+
+                    uploadBytes(submissionStorageRef, data).then(async (snapshot) => {
+                        console.log("Uploaded Submission File!");
+
+                        await getDownloadURL(submissionStorageRef).then((url) => {
+                            console.log("File URL", url);
+                            return callback(null, {success: true, downloadURL: url})
+                        }).catch((err) => {
+                            return callback(err, null);
+                        })
+                    }).catch((err) => {
+                        return callback(err, null);
+                    })      
+            }
+        ],
+
+        set_submission_db: [
+            "upload_submission_storage",
+            function(result, callback){
+                let {downloadURL} = result.upload_submission_storage;
+                console.log("Download URL", result.upload_submission_storage.downloadURL);
+                let submissionID = uuid4();
+                let submitSolutionQuery = `INSERT INTO submission(id, userEmail, hackathonID, problemStatID, submissionLink) VALUES('${submissionID}', '${userEmail}', '${hackathonID}', '${problemStatementID}', '${downloadURL}')`;
+
+                dbObj.query(submitSolutionQuery, (err, data) => {
+                    if(err){
+                        console.log("Error adding submission to db", err);
+                        return callback(err, null);
+                    }
+
+                    return callback(null, {success: true, data: data});
+                })
+            }
+        ]
+    }).then((responses) => {
+        return res.status(200).send({success: true, responses})
+    }).catch((err) => {
+        return res.status(500).send({success: false, errors: err});
+    })
 })
 
 // hackathonCreateRouter.post(

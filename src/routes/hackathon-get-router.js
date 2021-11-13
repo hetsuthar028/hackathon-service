@@ -336,16 +336,34 @@ hackathonGetRouter.get(`${path["getPastHackathon"]}`, (req, res) => {
 
 hackathonGetRouter.get(`${path["getSubmissions"]}`, (req, res) => {
     let paramHackathonID = req.params.hackathonID;
+    let userData = [];
 
     try{
         let getSubmissionsQuery = `SELECT * FROM submission WHERE hackathonID='${paramHackathonID}'`
-        dbObj.query(getSubmissionsQuery, (err, data) => {
+        
+        dbObj.query(getSubmissionsQuery, (err, submissionData) => {
             if(err){
                 console.log("Error getting submissions from DB");
                 return res.status(500).send({success: false, errors: JSON.stringify(err)});
             }
 
-            return res.status(200).send({success: true, submissions: data});
+            submissionData.map((d, idx) => {
+                axios.get(`http://localhost:4200/api/user/get/${d.userEmail}`).then((user) => {
+                    
+                    userData.push(user.data.user);
+
+                    if(userData.length == submissionData.length){
+                        console.log("Sent User Data")
+                        return res.status(200).send({success: true, submissions: submissionData, users: userData});
+                    }
+
+                }).catch((err) => {
+                    console.log("Error getting user in Sub Route", err);
+                    return res.status(500).send({success: false, errors: JSON.stringify(err.response)});
+                })
+
+                
+            });
         })
     } catch(err){
         console.log("Invalid Hackathon ID in Submission Request", err);

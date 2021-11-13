@@ -369,6 +369,23 @@ hackathonGetRouter.get(`${path["getSubmissions"]}`, (req, res) => {
         console.log("Invalid Hackathon ID in Submission Request", err);
         return res.status(500).send({success: false, errors: 'Invalid hackathon in submissions request'});
     }
+});
+
+hackathonGetRouter.get('/api/hackathon/get/winners/:hackathonID', (req, res) => {
+    let hackathonID = req.params.hackathonID;
+    if(!hackathonID){
+        return res.status(500).send({success: false, errors: 'Invalid hackathon'});
+    }
+
+    let getWinnersQuery = `SELECT * FROM winner WHERE hackathonID='${hackathonID}'`;
+    dbObj.query(getWinnersQuery, (err, data) => {
+        if(err){
+            console.log("Error getting winners from DB", err);
+            return res.status(500).send({success: false, errors: JSON.stringify(err)});
+        }
+
+        return res.status(200).send({success: true, data});
+    })
 })
 
 // hackathonGetRouter.get(`${path["getSpecificHackathon"]}`, requireLogin, (req, res)=>{

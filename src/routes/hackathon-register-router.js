@@ -19,45 +19,18 @@ hackathonRegisterRouter.post(`${path["registerForHackathon"]}`, (req, res)=>{
     // @WORKAROUND
     // [Because we've remove requireLogin, validateDev middlewares from the above request]
     // [Solution: Solve for can't send headers after they're sent. This error is created by the requireLogin middleware]
-    req.currentUser = {
-        email: 'hetmewada0028@gmail.com', username: 'Het Suthar', userType: 'developer'
-    }
-    req.validDev = true
+    // req.currentUser = {
+    //     email: 'hetmewada0028@gmail.com', username: 'Het Suthar', userType: 'developer'
+    // }
+    // req.validDev = true
 
     let {currentUser} = req.body;
     
     async.auto({
-        // validate_user: function(callback){
-        //     try{
-        //         if(req.currentUser){
-        //             callback(null, 'valid');
-        //         } else {
-        //             return callback('Not Authenticated', null)
-        //         }
-        //     } catch(err){
-        //         return callback('Not Authenticated', null)
-        //     }
-        // },
-
-        // authorize_user: [
-        //     "validate_user",
-        //     function(result, callback){
-        //         try{
-        //             if(req.validDev){
-        //                 callback(null, 'authorized')
-        //             } else{
-        //                 return callback('Not Authorized', null)
-        //             }
-        //         } catch(err){
-        //             return callback('Not Authorized', null)
-        //         }
-        //     }
-        // ],
-
         check_existing_hackathon: 
             function(callback){
                 let hackathonID = req.params.hackathonID;
-                let hackathonExistsQuery = `SELECT id, maxParticipants, participantCount FROM hackathon WHERE id='${hackathonID}'`
+                let hackathonExistsQuery = `SELECT id, maxParticipants, participantCount, regEnd FROM hackathon WHERE id='${hackathonID}'`
                 console.log("Hackathon ID", hackathonID);
                 dbObj.query(hackathonExistsQuery, (err, results) => {
                     if(err){
@@ -66,7 +39,15 @@ hackathonRegisterRouter.post(`${path["registerForHackathon"]}`, (req, res)=>{
                     }
 
                     if(results && results.length !=0){
-                        callback(null, {message: 'exists', data: results})
+                        let currentDate = new Date().toISOString();
+                        console.log("RESULTS at 0", results[0])
+                        let registerEndDate = new Date(results[0].regEnd).toISOString();
+                        console.log("Dates 123", currentDate, registerEndDate)
+                        if(currentDate >= registerEndDate){
+                            callback('Registrations are ended!', null);
+                        } else{
+                            callback(null, {message: 'exists', data: results})
+                        }
                     }
                     else {
                         return callback('Hackathon doesn\'t exists', null)

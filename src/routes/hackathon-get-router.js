@@ -64,7 +64,7 @@ hackathonGetRouter.get(
                 [
                     "check_current_user",
                     function(result, callback){
-                        let getHackathonQuery = `SELECT * from hackathon WHERE date(hackStart) >= '${currentDate}'`;
+                        let getHackathonQuery = `SELECT * from hackathon WHERE convert_tz(hackEnd, '+00:00','+05:30') >= '${currentDate}'`;
     
                         dbObj.query(getHackathonQuery, (err, results)=>{
                             if(err){
@@ -273,7 +273,12 @@ hackathonGetRouter.post(`${path['getCurrentlyRegistered']}`,
 
 hackathonGetRouter.get(`${path["getPastHackathon"]}`, (req, res) => {
     let date = new Date();
+    // date.setDate(date.getDate());
     let currentDate = date.toISOString().split('T')[0]
+    console.log("Current Date", date.toLocaleString(undefined, {timeZone: 'Asia/Kolkata'}));
+
+    let tempDate = new Date().toLocaleString(undefined, {timeZone: 'Asia/Kolkata'});
+    console.log("TEMP DATE", tempDate);
 
     async.auto({
         // check_current_user: function(callback){
@@ -310,7 +315,7 @@ hackathonGetRouter.get(`${path["getPastHackathon"]}`, (req, res) => {
 
         get_past_hackathons_db: 
             function(callback){
-                let getPastHackathonsQuery = `SELECT * FROM hackathon where date(hackEnd) <= '${currentDate}'`;
+                let getPastHackathonsQuery = `SELECT * FROM hackathon where convert_tz(hackEnd, '+00:00','+05:30') < '${currentDate}'`;
 
                 dbObj.query(getPastHackathonsQuery, (err, results) => {
                     if(err){

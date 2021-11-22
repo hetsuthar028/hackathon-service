@@ -25,39 +25,6 @@ const requireLogin = async (req, res, next) =>{
     }
 
     next();
-    // return res.status(400).send({message: "User not validated"})
-
-
-
-    // if(req.headers){
-    //     let authToken = req.headers.authorization;
-        
-    //     if(authToken){
-    //         axios.get('http://localhost:4200/api/user/giveJWT', {
-    //             headers: {
-    //                 sharedJWT : process.env.JWT_SECRET_BW_SERVICES
-    //             }
-    //         }).then(response=>{
-    //             if(response){
-    //                 console.log("Shared with Hackathon by User Service". response.headers.sharedJWT);
-    //                 try{
-    //                     const decoded = jwt.verify(authToken, response.headers.sharedJWT)
-    //                     if(decoded){
-    //                         next();
-    //                     }
-    //                 }
-    //                 catch(err){
-    //                     // 
-    //                 }
-                    
-    //             }
-    //         }).catch(err=>{
-    //             return next();
-    //         })
-    //     }
-    // }
-
-    // next();
 };
 
 module.exports = requireLogin;

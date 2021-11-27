@@ -5,14 +5,20 @@ const app = express();
 const PORT = process.env.PORT || 4400;
 
 const databaseSchemaRouter = require('./routes/database-schema');
-const hackathonRouter = require('./routes/hackathon-router');
+const hackathonCreateRouter = require('./routes/hackathon-create-router');
+const hackathonGetRouter = require('./routes/hackathon-get-router');
+const hackathonRegisterRouter = require('./routes/hackathon-register-router');
+const announceWinnersRouters = require('./routes/announce-winners-router');
 
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 app.use(cors());
 
 app.use(databaseSchemaRouter);
-app.use(hackathonRouter);
+app.use(hackathonGetRouter);
+app.use(hackathonCreateRouter);
+app.use(hackathonRegisterRouter);
+app.use(announceWinnersRouters);
 
 app.listen(PORT, ()=>{
     console.log(`Hackathon service listening on ${PORT}`);

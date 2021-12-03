@@ -17,12 +17,13 @@ paths = {
     dropSponsorTable: '/api/hackathon/dropSponsorTable',
     dropSubmissionTable: '/api/hackathon/dropSubmissionTable',
     dropRegistrationTable: '/api/hackathon/dropRegistrationTable',
-    dropWinnerTable: '/api/hackathon/dropWinnerTable'
+    dropWinnerTable: '/api/hackathon/dropWinnerTable',
+    dropSliderTable: '/api/hackathon/dropSliderTable'
 }
 
 queries = {
     createdb: "CREATE DATABASE hackathon",
-    createHackathonTable: "CREATE TABLE IF NOT EXISTS hackathon(id VARCHAR(50) NOT NULL, title VARCHAR(100) NOT NULL, description TEXT NOT NULL, organizedBy VARCHAR(50) NOT NULL, regStart DATE NOT NULL, regEnd DATE NOT NULL, hackStart DATE NOT NULL, hackEnd DATE NOT NULL, maxParticipants INT NOT NULL, submissionFormats TEXT NOT NULL, submissionGuidelines TEXT NOT NULL, facebook TEXT, instagram TEXT , twitter TEXT, linkedin TEXT , firstPrizeDesc TEXT NOT NULL, secondPrizeDesc TEXT NOT NULL, thirdPrizeDesc VARCHAR(100) NOT NULL, participantCount INT DEFAULT 0, PRIMARY KEY(id))",
+    createHackathonTable: "CREATE TABLE IF NOT EXISTS hackathon(id VARCHAR(50) NOT NULL, title VARCHAR(100) NOT NULL, description TEXT NOT NULL, organiserEmail VARCHAR(50) NOT NULL, organizedBy VARCHAR(50) NOT NULL, regStart DATE NOT NULL, regEnd DATE NOT NULL, hackStart DATE NOT NULL, hackEnd DATE NOT NULL, maxParticipants INT NOT NULL, submissionFormats TEXT NOT NULL, submissionGuidelines TEXT NOT NULL, facebook TEXT, instagram TEXT , twitter TEXT, linkedin TEXT , firstPrizeDesc TEXT NOT NULL, secondPrizeDesc TEXT NOT NULL, thirdPrizeDesc VARCHAR(100) NOT NULL, participantCount INT DEFAULT 0, PRIMARY KEY(id))",
     createProblemStatementTable: "CREATE TABLE IF NOT EXISTS problemStatement(id VARCHAR(50) NOT NULL, hackathonID VARCHAR(50) NOT NULL, title VARCHAR(100) NOT NULL, description TEXT NOT NULL, technologies TEXT NOT NULL, solutionType VARCHAR(50) NOT NULL, refMaterial TEXT NOT NULL, PRIMARY KEY(id), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON DELETE CASCADE ON UPDATE CASCADE)",
     createSubmissionTable: "CREATE TABLE IF NOT EXISTS submission(id VARCHAR(50) NOT NULL, userEmail VARCHAR(50) NOT NULL, hackathonID VARCHAR(50) NOT NULL, problemStatID VARCHAR(50) NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, submissionLink TEXT NOT NULL, PRIMARY KEY(userEmail, hackathonID), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON UPDATE CASCADE ON DELETE CASCADE, FOREIGN KEY(problemStatID) REFERENCES problemStatement(id) ON UPDATE CASCADE ON DELETE CASCADE)",
     createSponsorTable: "CREATE TABLE IF NOT EXISTS sponsor(id VARCHAR(50) NOT NULL, hackathonID VARCHAR(50) NOT NULL, name VARCHAR(50) NOT NULL, imageLink TEXT NOT NULL, webLink TEXT NOT NULL, PRIMARY KEY(id), FOREIGN KEY(hackathonID) REFERENCES hackathon(id) ON DELETE CASCADE ON UPDATE CASCADE)",
@@ -34,7 +35,8 @@ queries = {
     dropSponsorTable: "DROP TABLE sponsor",
     dropSubmissionTable: "DROP TABLE submission",
     dropRegistrationTable: "DROP TABLE registration",
-    dropWinnerTable: "DROP TABLE winner"
+    dropWinnerTable: "DROP TABLE winner",
+    dropSliderTable: "DROP TABLE slider"
 }
 
 // @Query - CREATE HACKATHON DATABASE
@@ -217,6 +219,19 @@ schemaRouter.get(paths['dropWinnerTable'], (req, res)=>{
 
         console.log('Winner Table dropped successfully');
         return res.send({message: 'Winner Table dropped successfully'});
+    });
+});
+
+// @QUery - DROP Slider TABLE
+schemaRouter.get(paths['dropSliderTable'], (req, res)=>{
+    dbObj.query(queries['dropSliderTable'], (err, result)=>{
+        if(err){
+            console.log("Error dropping Slider table", err);
+            throw new Error('Error dropping Slider table');
+        }
+
+        console.log('Slider Table dropped successfully');
+        return res.send({message: 'Slider Table dropped successfully'});
     });
 });
 

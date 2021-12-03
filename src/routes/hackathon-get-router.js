@@ -372,14 +372,26 @@ hackathonGetRouter.get(path["getMyHackathons"], (req, res) => {
                 function(result, callback){
                     let user = result.check_current_user.currentUser;
 
-                    // let getMyHackathonsQuery = `SELECT * FROM hackathon WHERE `
+                    let getMyHackathonsQuery = `SELECT * FROM hackathon WHERE organiserEmail='${user.email}'`;
+
+                    try{
+                        dbObj.query(getMyHackathonsQuery, (err, data) => {
+                            if(err){
+                                callback('Error fetching hackathons from DB', null)
+                            }
+
+                            return callback(null, {myHackathons: data})
+                        })
+                    } catch(err){
+                        callback('Error fetching hackathons', null);
+                    }
                 }
             ]
 
         }).then((responses) => {
-
+            return res.json(responses);
         }).catch((errs) => {
-
+            return res.status(500).send(errs);
         })
     }catch(err){
 

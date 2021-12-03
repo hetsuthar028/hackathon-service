@@ -14,7 +14,8 @@ let path = {
     getSpecificHackathon: "/api/hackathon/get/id/:hackathonID",
     getPastHackathon: "/api/hackathon/get/pastHackathons",
     getSubmissions: "/api/hackathon/get/submissions/:hackathonID",
-    getCurrentlyRegistered: "/api/hackathon/get/checkregistration/:hackathonID"
+    getCurrentlyRegistered: "/api/hackathon/get/checkregistration/:hackathonID",
+    getMyHackathons: "/api/hackathon/get/myhackathons"
 }
 
 // Get Upcoming Hackathons - Async
@@ -330,6 +331,60 @@ hackathonGetRouter.get('/api/hackathon/get/winners/:hackathonID', (req, res) => 
 
         return res.status(200).send({success: true, data});
     })
+});
+
+
+hackathonGetRouter.get(path["getMyHackathons"], (req, res) => {
+    let authHeader = req.headers.authorization;
+
+    try{
+        async.auto({
+            check_current_user: function(callback){
+                axios.get(`http://localhost:4200/api/user/currentuser`, {
+                    headers: {
+                        authorization: authHeader,
+                    }
+                }).then((responses) => {
+                    let cUser = responses.data.currentUser;
+                    if(cUser){
+                        callback(null, {currentUser: cUser});
+                    } else {
+                        callback('Invalid user', null)
+                    }
+                })
+            },
+
+            validate_user_type: [
+                "check_current_user",
+                function(result, callback){
+                    let user = result.check_current_user.currentUser;
+
+                    if(user.userType == "organization"){
+                        callback(null, 'valid')
+                    } else {
+                        callback('Invalid user', null);
+                    }
+                }
+            ],
+
+            get_my_hackathons: [
+                "validate_user_type",
+                function(result, callback){
+                    let user = result.check_current_user.currentUser;
+
+                    // let getMyHackathonsQuery = `SELECT * FROM hackathon WHERE `
+                }
+            ]
+
+        }).then((responses) => {
+
+        }).catch((errs) => {
+
+        })
+    }catch(err){
+
+    }
+
 })
 
 

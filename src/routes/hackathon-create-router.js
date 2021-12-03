@@ -81,6 +81,7 @@ hackathonCreateRouter.post(
                                 hackTitle,
                                 hackDescription,
                                 hackCompanyName,
+                                organiserEmail,
                                 regStart,
                                 regEnd,
                                 hackStart,
@@ -104,6 +105,7 @@ hackathonCreateRouter.post(
                                 hackTitle &&
                                 hackDescription &&
                                 hackCompanyName &&
+                                organiserEmail &&
                                 regStart &&
                                 regEnd &&
                                 hackStart &&
@@ -243,6 +245,7 @@ hackathonCreateRouter.post(
                             hackTitle,
                             hackDescription,
                             hackCompanyName,
+                            organiserEmail,
                             regStart,
                             regEnd,
                             hackStart,
@@ -260,8 +263,8 @@ hackathonCreateRouter.post(
                         } = req.body;
 
                         let uniqueHackathonID = uuid4();
-                        let addHackathonQuery = `INSERT INTO hackathon(id, title, description, organizedBy, regStart, regEnd, hackStart, hackEnd, maxParticipants, submissionFormats, submissionGuidelines, facebook, instagram, twitter, linkedin, firstPrizeDesc, secondPrizeDesc, thirdPrizeDesc) 
-                                                VALUES('${uniqueHackathonID}', '${hackTitle}', '${hackDescription}', '${hackCompanyName}', STR_TO_DATE("${regStart}","%d-%m-%Y"), STR_TO_DATE("${regEnd}","%d-%m-%Y"), STR_TO_DATE("${hackStart}","%d-%m-%Y"), STR_TO_DATE("${hackEnd}","%d-%m-%Y"), ${totalApplications}, '${submissionFormats}', '${submissionGuidelines}', '${facebook}', '${instagram}', '${twitter}', '${linkedIn}', '${firstPrizeDesc}', '${secondPrizeDesc}', '${thirdPrizeDesc}')`;
+                        let addHackathonQuery = `INSERT INTO hackathon(id, title, description, organiserEmail, organizedBy, regStart, regEnd, hackStart, hackEnd, maxParticipants, submissionFormats, submissionGuidelines, facebook, instagram, twitter, linkedin, firstPrizeDesc, secondPrizeDesc, thirdPrizeDesc) 
+                                                VALUES('${uniqueHackathonID}', '${hackTitle}', '${hackDescription}', '${organiserEmail}', '${hackCompanyName}', STR_TO_DATE("${regStart}","%d-%m-%Y"), STR_TO_DATE("${regEnd}","%d-%m-%Y"), STR_TO_DATE("${hackStart}","%d-%m-%Y"), STR_TO_DATE("${hackEnd}","%d-%m-%Y"), ${totalApplications}, '${submissionFormats}', '${submissionGuidelines}', '${facebook}', '${instagram}', '${twitter}', '${linkedIn}', '${firstPrizeDesc}', '${secondPrizeDesc}', '${thirdPrizeDesc}')`;
 
                         dbObj.query(addHackathonQuery, (err, results) => {
                             if (err) {

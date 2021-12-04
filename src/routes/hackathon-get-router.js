@@ -283,6 +283,7 @@ hackathonGetRouter.get(`${path["getSubmissions"]}`, (req, res) => {
     let paramHackathonID = req.params.hackathonID;
     let userData = [];
 
+    console.log("Got Submission GET REQUEST");
     try{
         let getSubmissionsQuery = `SELECT * FROM submission WHERE hackathonID='${paramHackathonID}'`
         
@@ -292,23 +293,32 @@ hackathonGetRouter.get(`${path["getSubmissions"]}`, (req, res) => {
                 return res.status(500).send({success: false, errors: JSON.stringify(err)});
             }
 
-            submissionData.map((d, idx) => {
-                axios.get(`http://localhost:4200/api/user/get/${d.userEmail}`).then((user) => {
+            console.log("Submission Data", submissionData)
+
+            if(submissionData.length > 0){
+                submissionData.map((d, idx) => {
+                    console.log("Inside Map")
+                    axios.get(`http://localhost:4200/api/user/get/${d.userEmail}`).then((user) => {
+                        
+                        userData.push(user.data.user);
+    
+                        if(userData.length == submissionData.length){
+                            console.log("Sent User Data")
+                            return res.status(200).send({success: true, submissions: submissionData, users: userData});
+                        }
+    
+                    }).catch((err) => {
+                        console.log("Error getting user in Sub Route", err);
+                        return res.status(500).send({success: false, errors: JSON.stringify(err.response)});
+                    })
+    
                     
-                    userData.push(user.data.user);
-
-                    if(userData.length == submissionData.length){
-                        console.log("Sent User Data")
-                        return res.status(200).send({success: true, submissions: submissionData, users: userData});
-                    }
-
-                }).catch((err) => {
-                    console.log("Error getting user in Sub Route", err);
-                    return res.status(500).send({success: false, errors: JSON.stringify(err.response)});
-                })
-
-                
-            });
+                });
+            } else {
+                console.log("SENT RESP")
+                return res.status(200).send({success: true, submissions: submissionData, users: userData});
+            }
+            console.log("OutSide")
         })
     } catch(err){
         console.log("Invalid Hackathon ID in Submission Request", err);
@@ -372,14 +382,26 @@ hackathonGetRouter.get(path["getMyHackathons"], (req, res) => {
                 function(result, callback){
                     let user = result.check_current_user.currentUser;
 
-                    // let getMyHackathonsQuery = `SELECT * FROM hackathon WHERE `
+                    let getMyHackathonsQuery = `SELECT * FROM hackathon WHERE organiserEmail='${user.email}'`;
+
+                    try{
+                        dbObj.query(getMyHackathonsQuery, (err, data) => {
+                            if(err){
+                                callback('Error fetching hackathons from DB', null)
+                            }
+
+                            return callback(null, {myHackathons: data})
+                        })
+                    } catch(err){
+                        callback('Error fetching hackathons', null);
+                    }
                 }
             ]
 
         }).then((responses) => {
-
+            return res.json(responses);
         }).catch((errs) => {
-
+            return res.status(500).send(errs);
         })
     }catch(err){
 

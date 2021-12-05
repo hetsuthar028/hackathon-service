@@ -15,7 +15,8 @@ let path = {
     getPastHackathon: "/api/hackathon/get/pastHackathons",
     getSubmissions: "/api/hackathon/get/submissions/:hackathonID",
     getCurrentlyRegistered: "/api/hackathon/get/checkregistration/:hackathonID",
-    getMyHackathons: "/api/hackathon/get/myhackathons"
+    getMyHackathons: "/api/hackathon/get/myhackathons",
+    getUserSubmission: "/api/hackathon/get/user/submission/"
 }
 
 // Get Upcoming Hackathons - Async
@@ -407,6 +408,71 @@ hackathonGetRouter.get(path["getMyHackathons"], (req, res) => {
 
     }
 
+});
+
+hackathonGetRouter.get(`${path["getUserSubmission"]}`, (req, res) => {
+    
+    try{
+        let userHeaders = req.headers.authorization;
+        
+        if(!userHeaders){
+            return res.status(500).send({success: false, error: 'Invalid User'})
+        }
+    
+        async.auto({
+            get_current_user: function(callback){
+                axios.get(`http://localhost:4200/api/user/currentuser`, {
+                    headers: {
+                        authorization: userHeaders,
+                    }
+                }).then((userResp) => {
+                    let currentUser = userResp.data.currentUser
+                    callback(null, {valid: true, currentUser});
+                }).catch((err) => {
+                    console.log("Inv1")
+                    callback('Invalid user', null);
+                });
+            },
+    
+            validate_user_type: [
+                "get_current_user",
+                function(result, callback){
+                    let currentUser = result.get_current_user.currentUser;
+                    
+                    if(currentUser && currentUser.userType == "developer"){
+                        callback(null, {valid: true});
+                    } else {
+                        console.log("Inv2")
+                        callback('Invalid user', null);
+                    }
+                }
+            ],
+    
+            get_user_submission: [
+                "validate_user_type",
+                function(result, callback){
+                    let currentUser = result.get_current_user.currentUser;
+    
+                    let getUserSubmissionQuery = `SELECT * FROM submission WHERE userEmail='${currentUser.email}'`;
+    
+                    dbObj.query(getUserSubmissionQuery, (err, data) => {
+                        if(err){
+                            callback('Error occured while getting user submission from DB', null);
+                        }
+                        callback(null, {valid: true, userSubmission: data[0]});
+                    })
+                }
+            ]
+        }).then((responses) => {
+            return res.status(200).send({success: true, responses});
+        }).catch((err) => {
+            console.log("Inside Error")
+            return res.status(500).send({success: false, error: err});
+        }) 
+    } catch(err){
+        return res.status(500).send({success: false, error: 'Invalid request'});
+    }
+    
 })
 
 

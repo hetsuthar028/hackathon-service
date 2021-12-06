@@ -365,34 +365,47 @@ hackathonGetRouter.get(path["getMyHackathons"], (req, res) => {
                 })
             },
 
-            validate_user_type: [
+            // validate_user_type: [
+            //     "check_current_user",
+            //     function(result, callback){
+            //         let user = result.check_current_user.currentUser;
+
+            //         if(user.userType == "organization"){
+            //             callback(null, 'valid')
+            //         } else {
+            //             callback('Invalid user', null);
+            //         }
+            //     }
+            // ],
+
+            get_my_hackathons: [
                 "check_current_user",
                 function(result, callback){
                     let user = result.check_current_user.currentUser;
-
-                    if(user.userType == "organization"){
-                        callback(null, 'valid')
-                    } else {
-                        callback('Invalid user', null);
-                    }
-                }
-            ],
-
-            get_my_hackathons: [
-                "validate_user_type",
-                function(result, callback){
-                    let user = result.check_current_user.currentUser;
-
-                    let getMyHackathonsQuery = `SELECT * FROM hackathon WHERE organiserEmail='${user.email}'`;
+                    
+                    let getOrgHackathonsQuery = `SELECT * FROM hackathon WHERE organiserEmail='${user.email}'`;
+                    let getDevHackathonsQuery = `SELECT * FROM registration, hackathon WHERE userEmail='${user.email}' AND hackathon.id=registration.hackathonID`
 
                     try{
-                        dbObj.query(getMyHackathonsQuery, (err, data) => {
-                            if(err){
-                                callback('Error fetching hackathons from DB', null)
-                            }
 
-                            return callback(null, {myHackathons: data})
-                        })
+                        if(user.userType == "organization"){
+                            dbObj.query(getOrgHackathonsQuery, (err, data) => {
+                                if(err){
+                                    callback('Error fetching hackathons from DB', null)
+                                }
+                                console.log("INTO ORG")
+                                return callback(null, {myHackathons: data})
+                            })
+                        } else if(user.userType == "developer"){
+                            dbObj.query(getDevHackathonsQuery, (err, data) => {
+                                if(err){
+                                    console.log("ERR2", err);
+                                    callback('Error fetching hackathons from DB', null);
+                                }
+
+                                return callback(null, {myHackathons: data})
+                            })
+                        }
                     } catch(err){
                         callback('Error fetching hackathons', null);
                     }

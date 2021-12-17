@@ -264,9 +264,9 @@ hackathonGetRouter.get(`${path["getPastHackathon"]}`, (req, res) => {
                         return callback("Error fetching past hackathons", null);
                     }
 
-                    if(results && results.length == 0){
-                        return callback('No upcoming hackathons', null);
-                    }
+                    // if(results && results.length == 0){
+                    //     return callback('No upcoming hackathons', null);
+                    // }
                     
                     return callback(null, {message: 'valid', pastHackathons: results})
                 })
